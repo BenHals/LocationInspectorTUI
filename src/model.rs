@@ -1,46 +1,47 @@
+pub mod main_screen;
+pub mod summary_screen;
 use crate::{db::DbConnection, event_handling::Message};
+use main_screen::{main_screen_update, MainScreen};
+use summary_screen::SummaryScreen;
 
-#[derive(Debug)]
-pub struct Model<D: DbConnection> {
+use self::summary_screen::summary_screen_update;
+
+#[derive(Debug, Clone)]
+pub enum Screen {
+    Main(MainScreen),
+    Summary(SummaryScreen),
+}
+
+#[derive(Debug, Clone)]
+pub struct AppState {
     pub key: usize,
     pub app_state: ApplicationState,
     pub active_screen: Screen,
+}
+
+#[derive(Debug)]
+pub struct Model<D: DbConnection> {
+    pub state: AppState,
     db: D,
 }
 
-#[derive(Debug)]
-pub struct MainScreen {}
-
-#[derive(Debug)]
-pub struct SummaryScreen {
-    pub id: String,
-}
-
-impl<T: DbConnection> Model<T> {
-    pub fn new(db: T) -> Self {
+impl<D: DbConnection> Model<D> {
+    pub fn new(db: D) -> Self {
         Self {
-            key: 0,
-            app_state: ApplicationState::Running,
-            active_screen: Screen::Main(MainScreen {}),
+            state: AppState {
+                key: 0,
+                app_state: ApplicationState::Running,
+                active_screen: Screen::Main(MainScreen {
+                    id: db.get_id(&0),
+                    err_msg: None,
+                }),
+            },
             db,
         }
     }
-
-    pub fn get_id(self: &Self) -> Option<String> {
-        match &self.active_screen {
-            Screen::Main(MainScreen {}) => self.db.get_id(&self.key),
-            Screen::Summary(SummaryScreen { id }) => Some(id.clone()),
-        }
-    }
-    pub fn get_name(self: &Self) -> Option<String> {
-        match &self.active_screen {
-            Screen::Main(MainScreen {}) => None,
-            Screen::Summary(SummaryScreen { id }) => self.db.get_name(&id),
-        }
-    }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum ApplicationState {
     Running,
     Loading,
@@ -48,38 +49,16 @@ pub enum ApplicationState {
     Crashed,
 }
 
-#[derive(Debug)]
-pub enum Screen {
-    Main(MainScreen),
-    Summary(SummaryScreen),
-}
-
-pub fn update<T: DbConnection>(model: &mut Model<T>, msg: Message) -> Option<Message> {
-    match model.active_screen {
-        Screen::Main(MainScreen {}) => match msg {
-            Message::Increment => {
-                model.key += 1;
-            }
-            Message::Decrement => {
-                if model.key > 0 {
-                    model.key -= 1;
-                }
-            }
-            Message::Select => match model.get_id() {
-                None => (),
-                Some(id) => model.active_screen = Screen::Summary(SummaryScreen { id }),
-            },
-            Message::Reset => model.key = 0,
-            Message::Quit => {
-                model.app_state = ApplicationState::Done;
-            }
-        },
-        _ => match msg {
-            Message::Quit => {
-                model.app_state = ApplicationState::Done;
-            }
-            _ => (),
-        },
+pub fn update<T: DbConnection>(model: Model<T>, msg: Message) -> (Model<T>, Option<Message>) {
+    let (next_state, next_msg) = match &model.state.active_screen {
+        Screen::Main(screen) => main_screen_update(&model, &msg, screen),
+        Screen::Summary(screen) => summary_screen_update(&model, &msg, &screen),
     };
-    None
+    (
+        Model {
+            state: next_state,
+            db: model.db,
+        },
+        next_msg,
+    )
 }

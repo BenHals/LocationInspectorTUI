@@ -22,7 +22,7 @@ pub fn handle_event<T: DbConnection>(
     if event::poll(Duration::from_millis(250))? {
         if let Event::Key(key) = event::read()? {
             if key.kind == event::KeyEventKind::Press {
-                return Ok(handle_key(&model.active_screen, key));
+                return Ok(handle_key(&model.state.active_screen, key));
             }
         }
     }

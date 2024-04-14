@@ -7,4 +7,6 @@ edition = "2021"
 
 [dependencies]
 crossterm = "0.27.0"
+geo = { version = "0.28.0", features = ["use-proj"] }
+proj = { version = "0.27.2", features = ["geo-types"] }
 ratatui = "0.26.1"

@@ -12,12 +12,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db = DictDb::new();
     let mut app_state = Model::new(db);
 
-    while app_state.app_state != ApplicationState::Done {
+    while app_state.state.app_state != ApplicationState::Done {
         terminal.draw(|frame| view(&mut app_state, frame))?;
 
         let mut current_msg = handle_event(&app_state)?;
         while current_msg.is_some() {
-            current_msg = update(&mut app_state, current_msg.unwrap());
+            (app_state, current_msg) = update(app_state, current_msg.unwrap());
         }
     }
 
