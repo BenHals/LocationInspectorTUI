@@ -1,13 +1,9 @@
 use ratatui::{widgets::Paragraph, Frame};
 
-use crate::{
-    db::DbConnection,
-    model::summary_screen::SummaryScreen,
-    model::{Model, Screen},
-};
+use crate::model::{summary_screen::SummaryScreen, AppState, Screen};
 
-pub fn view<T: DbConnection>(model: &mut Model<T>, f: &mut Frame) {
-    match &model.state.active_screen {
+pub fn view(state: &AppState, f: &mut Frame) {
+    match &state.active_screen {
         Screen::Main(screen) => {
             let id = match &screen.id {
                 None => "No matching id found".to_string(),
@@ -18,10 +14,7 @@ pub fn view<T: DbConnection>(model: &mut Model<T>, f: &mut Frame) {
                 None => "No errors".to_string(),
             };
             f.render_widget(
-                Paragraph::new(format!(
-                    "Key: {}, id: {}, err: {}",
-                    model.state.key, id, err_str
-                )),
+                Paragraph::new(format!("Key: {}, id: {}, err: {}", screen.key, id, err_str)),
                 f.size(),
             )
         }

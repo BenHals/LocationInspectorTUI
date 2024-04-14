@@ -2,38 +2,43 @@ use crate::{
     db::DbConnection,
     event_handling::Message,
     model::summary_screen::SummaryScreen,
-    model::{AppState, ApplicationState, Model, Screen},
+    model::{AppState, RunningState, Screen},
 };
 
 #[derive(Debug, Clone)]
 pub struct MainScreen {
+    pub key: usize,
     pub id: Option<String>,
     pub err_msg: Option<String>,
 }
 
 impl MainScreen {
-    pub fn new(id: Option<String>) -> Self {
-        Self { id, err_msg: None }
+    pub fn new(key: usize, id: Option<String>) -> Self {
+        Self {
+            key,
+            id,
+            err_msg: None,
+        }
     }
     pub fn clear_err(self: &mut Self) -> () {
         self.err_msg = None
     }
 }
 
-pub fn main_screen_update<T: DbConnection>(
-    model: &Model<T>,
+pub fn main_screen_update(
+    db: &dyn DbConnection,
     msg: &Message,
     screen: &MainScreen,
 ) -> (AppState, Option<Message>) {
     let (next_state, next_msg) = match msg {
         Message::Increment => {
-            let key = model.state.key + 1;
+            let key = screen.key + 1;
             (
                 AppState {
-                    key,
-                    app_state: ApplicationState::Running,
+                    app_state: RunningState::Running,
                     active_screen: Screen::Main(MainScreen {
-                        id: model.db.get_id(&key),
+                        key,
+                        id: db.get_id(&key),
                         err_msg: None,
                     }),
                 },
@@ -41,7 +46,7 @@ pub fn main_screen_update<T: DbConnection>(
             )
         }
         Message::Decrement => {
-            let mut key = model.state.key.clone();
+            let mut key = screen.key.clone();
             let mut err_msg: Option<String> = None;
             if key > 0 {
                 key -= 1;
@@ -50,10 +55,10 @@ pub fn main_screen_update<T: DbConnection>(
             }
             (
                 AppState {
-                    key,
-                    app_state: ApplicationState::Running,
+                    app_state: RunningState::Running,
                     active_screen: Screen::Main(MainScreen {
-                        id: model.db.get_id(&key),
+                        key,
+                        id: db.get_id(&key),
                         err_msg,
                     }),
                 },
@@ -65,22 +70,20 @@ pub fn main_screen_update<T: DbConnection>(
             match id {
                 None => (
                     AppState {
-                        key: model.state.key.clone(),
-                        app_state: ApplicationState::Running,
+                        app_state: RunningState::Running,
                         active_screen: Screen::Main(MainScreen {
-                            id: model.db.get_id(&model.state.key),
+                            key: screen.key,
+                            id: db.get_id(&screen.key),
                             err_msg: Some("No valid ID found".to_string()),
                         }),
                     },
                     None,
                 ),
                 Some(id) => {
-                    let key = model.state.key.clone();
-                    let name = model.db.get_name(&id);
+                    let name = db.get_name(&id);
                     (
                         AppState {
-                            key,
-                            app_state: ApplicationState::Running,
+                            app_state: RunningState::Running,
                             active_screen: Screen::Summary(SummaryScreen {
                                 id: id.clone(),
                                 name,
@@ -94,23 +97,23 @@ pub fn main_screen_update<T: DbConnection>(
         }
         Message::Reset => (
             AppState {
-                key: 0,
-                app_state: ApplicationState::Running,
+                app_state: RunningState::Running,
                 active_screen: Screen::Main(MainScreen {
-                    id: model.db.get_id(&0),
+                    key: 0,
+                    id: db.get_id(&0),
                     err_msg: None,
                 }),
             },
             None,
         ),
         Message::Quit => {
-            let key = model.state.key;
+            let key = screen.key;
             (
                 AppState {
-                    key,
-                    app_state: ApplicationState::Done,
+                    app_state: RunningState::Done,
                     active_screen: Screen::Main(MainScreen {
-                        id: model.db.get_id(&key),
+                        key,
+                        id: db.get_id(&key),
                         err_msg: None,
                     }),
                 },

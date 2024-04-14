@@ -2,10 +2,7 @@ use std::time::Duration;
 
 use crossterm::event::{self, Event, KeyCode};
 
-use crate::{
-    db::DbConnection,
-    model::{Model, Screen},
-};
+use crate::model::{AppState, Screen};
 
 #[derive(Debug)]
 pub enum Message {
@@ -16,13 +13,11 @@ pub enum Message {
     Select,
 }
 
-pub fn handle_event<T: DbConnection>(
-    model: &Model<T>,
-) -> Result<Option<Message>, Box<dyn std::error::Error>> {
+pub fn handle_event(state: &AppState) -> Result<Option<Message>, Box<dyn std::error::Error>> {
     if event::poll(Duration::from_millis(250))? {
         if let Event::Key(key) = event::read()? {
             if key.kind == event::KeyEventKind::Press {
-                return Ok(handle_key(&model.state.active_screen, key));
+                return Ok(handle_key(&state.active_screen, key));
             }
         }
     }

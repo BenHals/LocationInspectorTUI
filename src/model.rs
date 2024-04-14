@@ -14,51 +14,35 @@ pub enum Screen {
 
 #[derive(Debug, Clone)]
 pub struct AppState {
-    pub key: usize,
-    pub app_state: ApplicationState,
+    pub app_state: RunningState,
     pub active_screen: Screen,
 }
 
-#[derive(Debug)]
-pub struct Model<D: DbConnection> {
-    pub state: AppState,
-    db: D,
-}
-
-impl<D: DbConnection> Model<D> {
-    pub fn new(db: D) -> Self {
+impl AppState {
+    pub fn initial_app_state(db: &dyn DbConnection) -> Self {
         Self {
-            state: AppState {
+            app_state: RunningState::Running,
+            active_screen: Screen::Main(MainScreen {
                 key: 0,
-                app_state: ApplicationState::Running,
-                active_screen: Screen::Main(MainScreen {
-                    id: db.get_id(&0),
-                    err_msg: None,
-                }),
-            },
-            db,
+                id: db.get_id(&0),
+                err_msg: None,
+            }),
         }
     }
 }
 
 #[derive(Debug, Eq, PartialEq, Clone)]
-pub enum ApplicationState {
+pub enum RunningState {
     Running,
     Loading,
     Done,
     Crashed,
 }
 
-pub fn update<T: DbConnection>(model: Model<T>, msg: Message) -> (Model<T>, Option<Message>) {
-    let (next_state, next_msg) = match &model.state.active_screen {
-        Screen::Main(screen) => main_screen_update(&model, &msg, screen),
-        Screen::Summary(screen) => summary_screen_update(&model, &msg, &screen),
+pub fn update(state: AppState, msg: Message, db: &dyn DbConnection) -> (AppState, Option<Message>) {
+    let (next_state, next_msg) = match &state.active_screen {
+        Screen::Main(screen) => main_screen_update(db, &msg, screen),
+        Screen::Summary(screen) => summary_screen_update(db, &msg, &screen),
     };
-    (
-        Model {
-            state: next_state,
-            db: model.db,
-        },
-        next_msg,
-    )
+    (next_state, next_msg)
 }

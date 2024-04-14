@@ -1,7 +1,7 @@
 use crate::{
     db::DbConnection,
     event_handling::Message,
-    model::{AppState, ApplicationState, Model},
+    model::{AppState, RunningState},
 };
 
 #[derive(Debug, Clone)]
@@ -24,24 +24,26 @@ impl SummaryScreen {
     }
 }
 
-pub fn summary_screen_update<T: DbConnection>(
-    model: &Model<T>,
+pub fn summary_screen_update(
+    _db: &dyn DbConnection,
     msg: &Message,
-    _screen: &SummaryScreen,
+    screen: &SummaryScreen,
 ) -> (AppState, Option<Message>) {
     let (next_state, next_msg) = match msg {
-        Message::Quit => {
-            let key = model.state.key;
-            (
-                AppState {
-                    key,
-                    app_state: ApplicationState::Done,
-                    active_screen: model.state.active_screen.clone(),
-                },
-                None,
-            )
-        }
-        _ => (model.state.clone(), None),
+        Message::Quit => (
+            AppState {
+                app_state: RunningState::Done,
+                active_screen: super::Screen::Summary(screen.clone()),
+            },
+            None,
+        ),
+        _ => (
+            AppState {
+                app_state: RunningState::Running,
+                active_screen: super::Screen::Summary(screen.clone()),
+            },
+            None,
+        ),
     };
     (next_state, next_msg)
 }
