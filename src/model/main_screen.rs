@@ -81,12 +81,14 @@ pub fn main_screen_update(
                 ),
                 Some(id) => {
                     let name = db.get_name(&id);
+                    let coord = db.get_latlng(&id);
                     (
                         AppState {
                             app_state: RunningState::Running,
                             active_screen: Screen::Summary(SummaryScreen {
                                 id: id.clone(),
                                 name,
+                                coord,
                                 err_msg: None,
                             }),
                         },

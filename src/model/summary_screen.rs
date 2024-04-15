@@ -1,3 +1,5 @@
+use geo::Point;
+
 use crate::{
     db::DbConnection,
     event_handling::Message,
@@ -8,14 +10,16 @@ use crate::{
 pub struct SummaryScreen {
     pub id: String,
     pub name: Option<String>,
+    pub coord: Option<Point>,
     pub err_msg: Option<String>,
 }
 
 impl SummaryScreen {
-    pub fn new(id: String, name: Option<String>) -> Self {
+    pub fn new(id: String, name: Option<String>, coord: Option<Point>) -> Self {
         Self {
             id,
             name,
+            coord,
             err_msg: None,
         }
     }
