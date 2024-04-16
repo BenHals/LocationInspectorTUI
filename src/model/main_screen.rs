@@ -4,6 +4,7 @@ use crate::{
     model::summary_screen::SummaryScreen,
     model::{AppState, RunningState, Screen},
 };
+use geo::Point;
 
 #[derive(Debug, Clone)]
 pub struct MainScreen {
@@ -89,6 +90,8 @@ pub fn main_screen_update(
                                 id: id.clone(),
                                 name,
                                 coord,
+                                map_offset: Point::new(0.0, 0.0),
+                                map_scale: 1.0,
                                 err_msg: None,
                             }),
                         },
@@ -122,6 +125,13 @@ pub fn main_screen_update(
                 None,
             )
         }
+        _ => (
+            AppState {
+                app_state: RunningState::Running,
+                active_screen: Screen::Main(screen.clone()),
+            },
+            None,
+        ),
     };
     (next_state, next_msg)
 }

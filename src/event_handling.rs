@@ -11,6 +11,12 @@ pub enum Message {
     Reset,
     Quit,
     Select,
+    ShiftLeft,
+    ShiftRight,
+    ShiftDown,
+    ShiftUp,
+    ZoomIn,
+    ZoomOut,
 }
 
 pub fn handle_event(state: &AppState) -> Result<Option<Message>, Box<dyn std::error::Error>> {
@@ -33,9 +39,19 @@ fn handle_key(active_screen: &Screen, key: event::KeyEvent) -> Option<Message> {
             KeyCode::Enter => Some(Message::Select),
             _ => None,
         },
-        _ => match key.code {
+        Screen::Summary(_) => match key.code {
+            KeyCode::Char('w') => Some(Message::ShiftUp),
+            KeyCode::Char('a') => Some(Message::ShiftLeft),
+            KeyCode::Char('s') => Some(Message::ShiftDown),
+            KeyCode::Char('d') => Some(Message::ShiftRight),
+            KeyCode::Char('i') => Some(Message::ZoomIn),
+            KeyCode::Char('o') => Some(Message::ZoomOut),
             KeyCode::Char('q') => Some(Message::Quit),
             _ => None,
         },
+        // _ => match key.code {
+        //     KeyCode::Char('q') => Some(Message::Quit),
+        //     _ => None,
+        // },
     }
 }

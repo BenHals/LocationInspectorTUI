@@ -28,6 +28,8 @@ pub fn view(state: &AppState, f: &mut Frame) {
             id,
             name,
             coord,
+            map_offset,
+            map_scale,
             err_msg,
         }) => {
             let name_str = match name {
@@ -41,6 +43,10 @@ pub fn view(state: &AppState, f: &mut Frame) {
             let coord_str = match coord {
                 Some(n) => format!("<{}, {}>", n.x(), n.y()),
                 None => "No location found".to_string(),
+            };
+            let map_center = match coord {
+                None => Point::new(map_offset.x(), map_offset.y()),
+                Some(c) => Point::new(c.x() + map_offset.x(), c.y() + map_offset.y()),
             };
             let screen_layout = Layout::default()
                 .direction(Direction::Horizontal)
@@ -69,18 +75,21 @@ pub fn view(state: &AppState, f: &mut Frame) {
                         });
                         match coord {
                             None => (),
-                            Some(c) => {
-                                ctx.draw(&MapCoord {
-                                    color: Color::Yellow,
-                                    coord: c.clone(),
-                                });
-                            }
+                            Some(c) => ctx.print(
+                                c.x(),
+                                c.y(),
+                                Span::styled("X", Style::new().red().bold()),
+                            ),
                         }
                     })
-                    // .x_bounds([-180.0, 180.0])
-                    // .y_bounds([-90.0, 90.0]),
-                    .x_bounds([140.0, 180.0])
-                    .y_bounds([-50.0, -20.0]),
+                    .x_bounds([
+                        map_center.x() - 180.0 * map_scale,
+                        map_center.x() + 180.0 * map_scale,
+                    ])
+                    .y_bounds([
+                        map_center.y() - 90.0 * map_scale,
+                        map_center.y() + 90.0 * map_scale,
+                    ]),
                 screen_layout[0],
             );
             f.render_widget(
