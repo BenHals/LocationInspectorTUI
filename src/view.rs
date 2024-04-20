@@ -2,7 +2,11 @@ use geo::Point;
 use proj::Coord;
 use ratatui::{
     prelude::*,
-    widgets::{canvas::*, *},
+    widgets::{
+        block::{Position, Title},
+        canvas::*,
+        *,
+    },
 };
 use ratatui::{widgets::Paragraph, Frame};
 
@@ -50,7 +54,7 @@ pub fn view(state: &AppState, f: &mut Frame) {
             };
             let screen_layout = Layout::default()
                 .direction(Direction::Horizontal)
-                .constraints(vec![Constraint::Percentage(80), Constraint::Percentage(20)])
+                .constraints(vec![Constraint::Percentage(60), Constraint::Percentage(40)])
                 .split(f.size());
             let right_pane = Layout::default()
                 .direction(Direction::Vertical)
@@ -65,9 +69,30 @@ pub fn view(state: &AppState, f: &mut Frame) {
                 ])
                 .split(right_pane[0]);
 
+            let instruction = Title::from(vec![
+                "Left".into(),
+                " <a> ".blue().bold(),
+                "Right".into(),
+                " <d> ".blue().bold(),
+                "Up".into(),
+                " <w> ".blue().bold(),
+                "Down".into(),
+                " <s> ".blue().bold(),
+                "Zoom In".into(),
+                " <i> ".blue().bold(),
+                "Zoom Out".into(),
+                " <o> ".blue().bold(),
+            ])
+            .alignment(Alignment::Center)
+            .position(Position::Bottom);
             f.render_widget(
                 Canvas::default()
-                    .block(Block::default().borders(Borders::ALL).title("World"))
+                    .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .title("Location")
+                            .title(instruction),
+                    )
                     .paint(|ctx| {
                         ctx.draw(&Map {
                             color: Color::Green,
@@ -83,12 +108,16 @@ pub fn view(state: &AppState, f: &mut Frame) {
                         }
                     })
                     .x_bounds([
-                        map_center.x() - 180.0 * map_scale,
-                        map_center.x() + 180.0 * map_scale,
+                        map_center.x()
+                            - (screen_layout[0].as_size().width as f64 / 100.0) * 180.0 * map_scale,
+                        map_center.x()
+                            + (screen_layout[0].as_size().width as f64 / 100.0) * 180.0 * map_scale,
                     ])
                     .y_bounds([
-                        map_center.y() - 90.0 * map_scale,
-                        map_center.y() + 90.0 * map_scale,
+                        map_center.y()
+                            - (screen_layout[0].as_size().height as f64 / 30.0) * 90.0 * map_scale,
+                        map_center.y()
+                            + (screen_layout[0].as_size().height as f64 / 30.0) * 90.0 * map_scale,
                     ]),
                 screen_layout[0],
             );
