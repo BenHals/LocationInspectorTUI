@@ -10,7 +10,40 @@ use ratatui::{
 };
 use ratatui::{widgets::Paragraph, Frame};
 
-use crate::model::{summary_screen::SummaryScreen, AppState, Screen};
+use crate::model::{
+    summary_screen::{SelectedScreen, SummaryScreen},
+    AppState, Screen,
+};
+
+fn get_status_line(selected_screen: &SelectedScreen, active_screen: SelectedScreen) -> Paragraph {
+    let mut main_screen = "Main".bold();
+    let mut summary_screen = "Summary".bold();
+    match selected_screen {
+        SelectedScreen::Main => main_screen = main_screen.underlined(),
+        SelectedScreen::Summary => summary_screen = summary_screen.underlined(),
+    };
+    match active_screen {
+        SelectedScreen::Main => main_screen = main_screen.italic(),
+        SelectedScreen::Summary => summary_screen = summary_screen.italic(),
+    };
+
+    let screen_line = match selected_screen {
+        SelectedScreen::Main => {
+            ratatui::text::Line::from(vec![main_screen, Span::raw(" "), summary_screen])
+        }
+        SelectedScreen::Summary => {
+            ratatui::text::Line::from(vec![main_screen, Span::raw(" "), summary_screen])
+        }
+    };
+    return Paragraph::new(screen_line)
+        .block(
+            Block::default()
+                .title("Screen")
+                .borders(Borders::ALL)
+                .style(Style::default().fg(Color::Red)),
+        )
+        .alignment(Alignment::Center);
+}
 
 pub fn view(state: &AppState, f: &mut Frame) {
     match &state.active_screen {
@@ -34,6 +67,7 @@ pub fn view(state: &AppState, f: &mut Frame) {
             coord,
             map_offset,
             map_scale,
+            selected_screen,
             err_msg,
         }) => {
             let name_str = match name {
@@ -52,10 +86,14 @@ pub fn view(state: &AppState, f: &mut Frame) {
                 None => Point::new(map_offset.x(), map_offset.y()),
                 Some(c) => Point::new(c.x() + map_offset.x(), c.y() + map_offset.y()),
             };
+            let screen_layout_h = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(vec![Constraint::Length(3), Constraint::Fill(1)])
+                .split(f.size());
             let screen_layout = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints(vec![Constraint::Percentage(60), Constraint::Percentage(40)])
-                .split(f.size());
+                .split(screen_layout_h[1]);
             let right_pane = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints(vec![Constraint::Percentage(80), Constraint::Percentage(20)])
@@ -69,6 +107,10 @@ pub fn view(state: &AppState, f: &mut Frame) {
                 ])
                 .split(right_pane[0]);
 
+            f.render_widget(
+                get_status_line(selected_screen, SelectedScreen::Summary),
+                screen_layout_h[0],
+            );
             let instruction = Title::from(vec![
                 "Left".into(),
                 " <a> ".blue().bold(),

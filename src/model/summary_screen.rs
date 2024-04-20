@@ -7,6 +7,8 @@ use crate::{
     model::{AppState, RunningState},
 };
 
+use super::main_screen::MainScreen;
+
 #[derive(Debug, Clone)]
 pub struct SummaryScreen {
     pub id: String,
@@ -14,6 +16,7 @@ pub struct SummaryScreen {
     pub coord: Option<Point>,
     pub map_offset: Point,
     pub map_scale: f64,
+    pub selected_screen: SelectedScreen,
     pub err_msg: Option<String>,
 }
 
@@ -25,12 +28,19 @@ impl SummaryScreen {
             coord,
             map_offset: Point::new(0.0, 0.0),
             map_scale: 1.0,
+            selected_screen: SelectedScreen::Summary,
             err_msg: None,
         }
     }
     pub fn clear_err(self: &mut Self) -> () {
         self.err_msg = None
     }
+}
+
+#[derive(Clone, Debug)]
+pub enum SelectedScreen {
+    Main,
+    Summary,
 }
 
 pub fn summary_screen_update(
@@ -48,6 +58,7 @@ pub fn summary_screen_update(
                     coord: screen.coord.clone(),
                     map_offset: screen.map_offset.clone(),
                     map_scale: screen.map_scale - 0.1,
+                    selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
                 }),
             },
@@ -62,6 +73,7 @@ pub fn summary_screen_update(
                     coord: screen.coord.clone(),
                     map_offset: screen.map_offset.clone(),
                     map_scale: screen.map_scale + 0.1,
+                    selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
                 }),
             },
@@ -76,6 +88,7 @@ pub fn summary_screen_update(
                     coord: screen.coord.clone(),
                     map_offset: Point::new(screen.map_offset.x(), screen.map_offset.y() + 1.0),
                     map_scale: screen.map_scale.clone(),
+                    selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
                 }),
             },
@@ -90,6 +103,7 @@ pub fn summary_screen_update(
                     coord: screen.coord.clone(),
                     map_offset: Point::new(screen.map_offset.x() - 1.0, screen.map_offset.y()),
                     map_scale: screen.map_scale.clone(),
+                    selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
                 }),
             },
@@ -104,6 +118,7 @@ pub fn summary_screen_update(
                     coord: screen.coord.clone(),
                     map_offset: Point::new(screen.map_offset.x(), screen.map_offset.y() - 1.0),
                     map_scale: screen.map_scale.clone(),
+                    selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
                 }),
             },
@@ -118,8 +133,44 @@ pub fn summary_screen_update(
                     coord: screen.coord.clone(),
                     map_offset: Point::new(screen.map_offset.x() + 1.0, screen.map_offset.y()),
                     map_scale: screen.map_scale.clone(),
+                    selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
                 }),
+            },
+            None,
+        ),
+        Message::Tab => (
+            AppState {
+                app_state: RunningState::Running,
+                active_screen: Screen::Summary(SummaryScreen {
+                    id: screen.id.clone(),
+                    name: screen.name.clone(),
+                    coord: screen.coord.clone(),
+                    map_offset: screen.map_offset.clone(),
+                    map_scale: screen.map_scale.clone(),
+                    selected_screen: match screen.selected_screen {
+                        SelectedScreen::Main => SelectedScreen::Summary,
+                        SelectedScreen::Summary => SelectedScreen::Main,
+                    },
+                    err_msg: None,
+                }),
+            },
+            None,
+        ),
+        Message::Select => (
+            match screen.selected_screen {
+                SelectedScreen::Main => AppState {
+                    app_state: RunningState::Running,
+                    active_screen: super::Screen::Main(MainScreen {
+                        key: 0,
+                        id: None,
+                        err_msg: Some("Select Location".to_string()),
+                    }),
+                },
+                SelectedScreen::Summary => AppState {
+                    app_state: RunningState::Running,
+                    active_screen: Screen::Summary(screen.clone()),
+                },
             },
             None,
         ),

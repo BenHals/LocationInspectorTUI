@@ -6,6 +6,8 @@ use crate::{
 };
 use geo::Point;
 
+use super::summary_screen::SelectedScreen;
+
 #[derive(Debug, Clone)]
 pub struct MainScreen {
     pub key: usize,
@@ -92,6 +94,7 @@ pub fn main_screen_update(
                                 coord,
                                 map_offset: Point::new(0.0, 0.0),
                                 map_scale: 1.0,
+                                selected_screen: SelectedScreen::Summary,
                                 err_msg: None,
                             }),
                         },

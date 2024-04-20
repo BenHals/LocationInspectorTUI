@@ -17,6 +17,7 @@ pub enum Message {
     ShiftUp,
     ZoomIn,
     ZoomOut,
+    Tab,
 }
 
 pub fn handle_event(state: &AppState) -> Result<Option<Message>, Box<dyn std::error::Error>> {
@@ -47,6 +48,8 @@ fn handle_key(active_screen: &Screen, key: event::KeyEvent) -> Option<Message> {
             KeyCode::Char('i') => Some(Message::ZoomIn),
             KeyCode::Char('o') => Some(Message::ZoomOut),
             KeyCode::Char('q') => Some(Message::Quit),
+            KeyCode::Tab => Some(Message::Tab),
+            KeyCode::Enter => Some(Message::Select),
             _ => None,
         },
         // _ => match key.code {
