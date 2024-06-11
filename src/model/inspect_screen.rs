@@ -9,9 +9,10 @@ use crate::{
 
 use super::main_screen::MainScreen;
 use super::screens::SelectedScreen;
+use super::summary_screen::SummaryScreen;
 
 #[derive(Debug, Clone)]
-pub struct SummaryScreen {
+pub struct InspectScreen {
     pub id: String,
     pub name: Option<String>,
     pub coord: Option<Point>,
@@ -21,7 +22,7 @@ pub struct SummaryScreen {
     pub err_msg: Option<String>,
 }
 
-impl SummaryScreen {
+impl InspectScreen {
     pub fn new(id: String, name: Option<String>, coord: Option<Point>) -> Self {
         Self {
             id,
@@ -29,7 +30,7 @@ impl SummaryScreen {
             coord,
             map_offset: Point::new(0.0, 0.0),
             map_scale: 1.0,
-            selected_screen: SelectedScreen::Summary,
+            selected_screen: SelectedScreen::Inspect,
             err_msg: None,
         }
     }
@@ -38,16 +39,16 @@ impl SummaryScreen {
     }
 }
 
-pub fn summary_screen_update(
+pub fn inspect_screen_update(
     _db: &dyn DbConnection,
     msg: &Message,
-    screen: &SummaryScreen,
+    screen: &InspectScreen,
 ) -> (AppState, Option<Message>) {
     let (next_state, next_msg) = match msg {
         Message::ZoomIn => (
             AppState {
                 app_state: RunningState::Running,
-                active_screen: Screen::Summary(SummaryScreen {
+                active_screen: Screen::Inspect(InspectScreen {
                     id: screen.id.clone(),
                     name: screen.name.clone(),
                     coord: screen.coord.clone(),
@@ -62,7 +63,7 @@ pub fn summary_screen_update(
         Message::ZoomOut => (
             AppState {
                 app_state: RunningState::Running,
-                active_screen: Screen::Summary(SummaryScreen {
+                active_screen: Screen::Inspect(InspectScreen {
                     id: screen.id.clone(),
                     name: screen.name.clone(),
                     coord: screen.coord.clone(),
@@ -77,7 +78,7 @@ pub fn summary_screen_update(
         Message::ShiftUp => (
             AppState {
                 app_state: RunningState::Running,
-                active_screen: Screen::Summary(SummaryScreen {
+                active_screen: Screen::Inspect(InspectScreen {
                     id: screen.id.clone(),
                     name: screen.name.clone(),
                     coord: screen.coord.clone(),
@@ -92,7 +93,7 @@ pub fn summary_screen_update(
         Message::ShiftLeft => (
             AppState {
                 app_state: RunningState::Running,
-                active_screen: Screen::Summary(SummaryScreen {
+                active_screen: Screen::Inspect(InspectScreen {
                     id: screen.id.clone(),
                     name: screen.name.clone(),
                     coord: screen.coord.clone(),
@@ -107,7 +108,7 @@ pub fn summary_screen_update(
         Message::ShiftDown => (
             AppState {
                 app_state: RunningState::Running,
-                active_screen: Screen::Summary(SummaryScreen {
+                active_screen: Screen::Inspect(InspectScreen {
                     id: screen.id.clone(),
                     name: screen.name.clone(),
                     coord: screen.coord.clone(),
@@ -137,7 +138,7 @@ pub fn summary_screen_update(
         Message::Tab => (
             AppState {
                 app_state: RunningState::Running,
-                active_screen: Screen::Summary(SummaryScreen {
+                active_screen: Screen::Inspect(InspectScreen {
                     id: screen.id.clone(),
                     name: screen.name.clone(),
                     coord: screen.coord.clone(),
@@ -165,19 +166,19 @@ pub fn summary_screen_update(
                 },
                 SelectedScreen::Summary => AppState {
                     app_state: RunningState::Running,
-                    active_screen: Screen::Summary(screen.clone()),
-                },
-                SelectedScreen::Inspect => AppState {
-                    app_state: RunningState::Running,
-                    active_screen: Screen::Inspect(super::inspect_screen::InspectScreen {
+                    active_screen: super::Screen::Summary(SummaryScreen {
                         id: screen.id.clone(),
                         name: screen.name.clone(),
                         coord: screen.coord.clone(),
                         map_offset: Point::new(0.0, 0.0),
                         map_scale: 1.0,
-                        selected_screen: SelectedScreen::Inspect,
+                        selected_screen: SelectedScreen::Summary,
                         err_msg: None,
                     }),
+                },
+                SelectedScreen::Inspect => AppState {
+                    app_state: RunningState::Running,
+                    active_screen: Screen::Inspect(screen.clone()),
                 },
             },
             None,
@@ -185,14 +186,14 @@ pub fn summary_screen_update(
         Message::Quit => (
             AppState {
                 app_state: RunningState::Done,
-                active_screen: super::Screen::Summary(screen.clone()),
+                active_screen: super::Screen::Inspect(screen.clone()),
             },
             None,
         ),
         _ => (
             AppState {
                 app_state: RunningState::Running,
-                active_screen: super::Screen::Summary(screen.clone()),
+                active_screen: super::Screen::Inspect(screen.clone()),
             },
             None,
         ),

@@ -6,7 +6,7 @@ use crate::{
 };
 use geo::Point;
 
-use super::summary_screen::SelectedScreen;
+use super::screens::SelectedScreen;
 
 #[derive(Debug, Clone)]
 pub struct MainScreen {
