@@ -1,4 +1,4 @@
-use geo::Point;
+use geo::{Point, Polygon};
 
 use crate::{
     db::DbConnection,
@@ -16,6 +16,7 @@ pub struct InspectScreen {
     pub id: String,
     pub name: Option<String>,
     pub coord: Option<Point>,
+    pub polygons: Vec<Polygon>,
     pub map_offset: Point,
     pub map_scale: f64,
     pub selected_screen: SelectedScreen,
@@ -28,6 +29,7 @@ impl InspectScreen {
             id,
             name,
             coord,
+            polygons: vec![],
             map_offset: Point::new(0.0, 0.0),
             map_scale: 1.0,
             selected_screen: SelectedScreen::Inspect,
@@ -52,6 +54,7 @@ pub fn inspect_screen_update(
                     id: screen.id.clone(),
                     name: screen.name.clone(),
                     coord: screen.coord.clone(),
+                    polygons: screen.polygons.clone(),
                     map_offset: screen.map_offset.clone(),
                     map_scale: screen.map_scale * 0.9,
                     selected_screen: screen.selected_screen.clone(),
@@ -67,6 +70,7 @@ pub fn inspect_screen_update(
                     id: screen.id.clone(),
                     name: screen.name.clone(),
                     coord: screen.coord.clone(),
+                    polygons: screen.polygons.clone(),
                     map_offset: screen.map_offset.clone(),
                     map_scale: screen.map_scale * 1.1,
                     selected_screen: screen.selected_screen.clone(),
@@ -82,6 +86,7 @@ pub fn inspect_screen_update(
                     id: screen.id.clone(),
                     name: screen.name.clone(),
                     coord: screen.coord.clone(),
+                    polygons: screen.polygons.clone(),
                     map_offset: Point::new(screen.map_offset.x(), screen.map_offset.y() + 1.0),
                     map_scale: screen.map_scale.clone(),
                     selected_screen: screen.selected_screen.clone(),
@@ -97,6 +102,7 @@ pub fn inspect_screen_update(
                     id: screen.id.clone(),
                     name: screen.name.clone(),
                     coord: screen.coord.clone(),
+                    polygons: screen.polygons.clone(),
                     map_offset: Point::new(screen.map_offset.x() - 1.0, screen.map_offset.y()),
                     map_scale: screen.map_scale.clone(),
                     selected_screen: screen.selected_screen.clone(),
@@ -112,6 +118,7 @@ pub fn inspect_screen_update(
                     id: screen.id.clone(),
                     name: screen.name.clone(),
                     coord: screen.coord.clone(),
+                    polygons: screen.polygons.clone(),
                     map_offset: Point::new(screen.map_offset.x(), screen.map_offset.y() - 1.0),
                     map_scale: screen.map_scale.clone(),
                     selected_screen: screen.selected_screen.clone(),
@@ -127,6 +134,7 @@ pub fn inspect_screen_update(
                     id: screen.id.clone(),
                     name: screen.name.clone(),
                     coord: screen.coord.clone(),
+                    polygons: screen.polygons.clone(),
                     map_offset: Point::new(screen.map_offset.x() + 1.0, screen.map_offset.y()),
                     map_scale: screen.map_scale.clone(),
                     selected_screen: screen.selected_screen.clone(),
@@ -142,6 +150,7 @@ pub fn inspect_screen_update(
                     id: screen.id.clone(),
                     name: screen.name.clone(),
                     coord: screen.coord.clone(),
+                    polygons: screen.polygons.clone(),
                     map_offset: screen.map_offset.clone(),
                     map_scale: screen.map_scale.clone(),
                     selected_screen: match screen.selected_screen {

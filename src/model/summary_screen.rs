@@ -39,7 +39,7 @@ impl SummaryScreen {
 }
 
 pub fn summary_screen_update(
-    _db: &dyn DbConnection,
+    db: &dyn DbConnection,
     msg: &Message,
     screen: &SummaryScreen,
 ) -> (AppState, Option<Message>) {
@@ -173,6 +173,7 @@ pub fn summary_screen_update(
                         id: screen.id.clone(),
                         name: screen.name.clone(),
                         coord: screen.coord.clone(),
+                        polygons: db.get_polygons(&screen.id).unwrap(),
                         map_offset: Point::new(0.0, 0.0),
                         map_scale: 1.0,
                         selected_screen: SelectedScreen::Inspect,

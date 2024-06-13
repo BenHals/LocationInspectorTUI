@@ -1,4 +1,5 @@
 use geo::Point;
+use itertools::Itertools;
 use proj::Coord;
 use ratatui::{
     prelude::*,
@@ -208,6 +209,7 @@ pub fn view(state: &AppState, f: &mut Frame) {
             id,
             name,
             coord,
+            polygons,
             map_offset,
             map_scale,
             selected_screen,
@@ -276,14 +278,18 @@ pub fn view(state: &AppState, f: &mut Frame) {
                             .title(instruction),
                     )
                     .paint(|ctx| {
-                        ctx.draw(&LineCustom {
-                            x1: 0.0,
-                            y1: 0.0,
-                            x2: 10.0,
-                            y2: 10.0,
-                            color: Color::Red,
-                            scale: map_scale.clone(),
-                        });
+                        for polygon in polygons {
+                            for (ca, cb) in polygon.exterior().coords().tuple_windows() {
+                                ctx.draw(&LineCustom {
+                                    x1: ca.x,
+                                    y1: ca.y,
+                                    x2: cb.x,
+                                    y2: cb.y,
+                                    color: Color::Red,
+                                    scale: map_scale.clone(),
+                                });
+                            }
+                        }
                     })
                     .x_bounds([
                         map_center.x() - (screen_layout[0].as_size().width as f64 * map_scale),
