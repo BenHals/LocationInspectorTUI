@@ -12,7 +12,8 @@ use ratatui::{
 use ratatui::{widgets::Paragraph, Frame};
 
 use crate::model::{
-    inspect_screen::InspectScreen, summary_screen::SummaryScreen, AppState, Screen,
+    geometry::LineCustom, inspect_screen::InspectScreen, summary_screen::SummaryScreen, AppState,
+    Screen,
 };
 
 use crate::model::screens::SelectedScreen;
@@ -275,29 +276,13 @@ pub fn view(state: &AppState, f: &mut Frame) {
                             .title(instruction),
                     )
                     .paint(|ctx| {
-                        let x1: f64 = 0.0;
-                        let y1: f64 = 0.0;
-                        let x2: f64 = 10.0;
-                        let y2: f64 = 10.0;
-                        let line_len = ((x2 - x1).powi(2) + (y2 - y1).powi(2)).sqrt();
-                        let n_points = (line_len / map_scale) as i64;
-                        let mut c: Vec<(f64, f64)> = Vec::new();
-                        for i in 0..n_points {
-                            let p: f64 = i as f64 / n_points as f64;
-                            let x = x1 + (x2 - x1) * p;
-                            let y = y1 + (y2 - y1) * p;
-                            c.push((x, y))
-                        }
-                        ctx.draw(&Line {
+                        ctx.draw(&LineCustom {
                             x1: 0.0,
                             y1: 0.0,
                             x2: 10.0,
                             y2: 10.0,
-                            color: Color::LightCyan,
-                        });
-                        ctx.draw(&Points {
-                            coords: &c,
-                            color: Color::Green,
+                            color: Color::Red,
+                            scale: map_scale.clone(),
                         });
                     })
                     .x_bounds([

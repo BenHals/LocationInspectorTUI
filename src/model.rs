@@ -1,3 +1,4 @@
+pub mod geometry;
 pub mod inspect_screen;
 pub mod main_screen;
 pub mod screens;
