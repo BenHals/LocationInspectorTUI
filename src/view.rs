@@ -2,9 +2,10 @@ use geo::Point;
 use proj::Coord;
 use ratatui::{
     prelude::*,
+    style::Color,
     widgets::{
         block::{Position, Title},
-        canvas::*,
+        canvas::{Line, *},
         *,
     },
 };
@@ -223,10 +224,7 @@ pub fn view(state: &AppState, f: &mut Frame) {
                 Some(n) => format!("<{}, {}>", n.x(), n.y()),
                 None => "No location found".to_string(),
             };
-            let map_center = match coord {
-                None => Point::new(map_offset.x(), map_offset.y()),
-                Some(c) => Point::new(c.x() + map_offset.x(), c.y() + map_offset.y()),
-            };
+            let map_center = Point::new(map_offset.x(), map_offset.y());
             let screen_layout_h = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints(vec![Constraint::Length(3), Constraint::Fill(1)])
@@ -276,18 +274,39 @@ pub fn view(state: &AppState, f: &mut Frame) {
                             .title("Location")
                             .title(instruction),
                     )
-                    .paint(|_ctx| {})
+                    .paint(|ctx| {
+                        let x1: f64 = 0.0;
+                        let y1: f64 = 0.0;
+                        let x2: f64 = 10.0;
+                        let y2: f64 = 10.0;
+                        let line_len = ((x2 - x1).powi(2) + (y2 - y1).powi(2)).sqrt();
+                        let n_points = (line_len / map_scale) as i64;
+                        let mut c: Vec<(f64, f64)> = Vec::new();
+                        for i in 0..n_points {
+                            let p: f64 = i as f64 / n_points as f64;
+                            let x = x1 + (x2 - x1) * p;
+                            let y = y1 + (y2 - y1) * p;
+                            c.push((x, y))
+                        }
+                        ctx.draw(&Line {
+                            x1: 0.0,
+                            y1: 0.0,
+                            x2: 10.0,
+                            y2: 10.0,
+                            color: Color::LightCyan,
+                        });
+                        ctx.draw(&Points {
+                            coords: &c,
+                            color: Color::Green,
+                        });
+                    })
                     .x_bounds([
-                        map_center.x()
-                            - (screen_layout[0].as_size().width as f64 / 100.0) * 180.0 * map_scale,
-                        map_center.x()
-                            + (screen_layout[0].as_size().width as f64 / 100.0) * 180.0 * map_scale,
+                        map_center.x() - (screen_layout[0].as_size().width as f64 * map_scale),
+                        map_center.x() + (screen_layout[0].as_size().width as f64 * map_scale),
                     ])
                     .y_bounds([
-                        map_center.y()
-                            - (screen_layout[0].as_size().height as f64 / 30.0) * 90.0 * map_scale,
-                        map_center.y()
-                            + (screen_layout[0].as_size().height as f64 / 30.0) * 90.0 * map_scale,
+                        map_center.y() - (screen_layout[0].as_size().height as f64 * map_scale),
+                        map_center.y() + (screen_layout[0].as_size().height as f64 * map_scale),
                     ]),
                 screen_layout[0],
             );

@@ -53,7 +53,7 @@ pub fn inspect_screen_update(
                     name: screen.name.clone(),
                     coord: screen.coord.clone(),
                     map_offset: screen.map_offset.clone(),
-                    map_scale: screen.map_scale - 0.1,
+                    map_scale: screen.map_scale * 0.9,
                     selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
                 }),
@@ -68,7 +68,7 @@ pub fn inspect_screen_update(
                     name: screen.name.clone(),
                     coord: screen.coord.clone(),
                     map_offset: screen.map_offset.clone(),
-                    map_scale: screen.map_scale + 0.1,
+                    map_scale: screen.map_scale * 1.1,
                     selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
                 }),
@@ -123,7 +123,7 @@ pub fn inspect_screen_update(
         Message::ShiftRight => (
             AppState {
                 app_state: RunningState::Running,
-                active_screen: Screen::Summary(SummaryScreen {
+                active_screen: Screen::Inspect(InspectScreen {
                     id: screen.id.clone(),
                     name: screen.name.clone(),
                     coord: screen.coord.clone(),
