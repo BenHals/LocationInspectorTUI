@@ -1,4 +1,4 @@
-use geo::Point;
+use geo::{Centroid, Point};
 
 use crate::{
     db::DbConnection,
@@ -167,19 +167,23 @@ pub fn summary_screen_update(
                     app_state: RunningState::Running,
                     active_screen: Screen::Summary(screen.clone()),
                 },
-                SelectedScreen::Inspect => AppState {
-                    app_state: RunningState::Running,
-                    active_screen: Screen::Inspect(super::inspect_screen::InspectScreen {
-                        id: screen.id.clone(),
-                        name: screen.name.clone(),
-                        coord: screen.coord.clone(),
-                        polygons: db.get_polygons(&screen.id).unwrap(),
-                        map_offset: Point::new(0.0, 0.0),
-                        map_scale: 1.0,
-                        selected_screen: SelectedScreen::Inspect,
-                        err_msg: None,
-                    }),
-                },
+                SelectedScreen::Inspect => {
+                    let polys = db.get_polygons(&screen.id).unwrap();
+                    let center = polys[0].centroid().unwrap();
+                    AppState {
+                        app_state: RunningState::Running,
+                        active_screen: Screen::Inspect(super::inspect_screen::InspectScreen {
+                            id: screen.id.clone(),
+                            name: screen.name.clone(),
+                            coord: Some(center),
+                            polygons: polys,
+                            map_offset: Point::new(0.0, 0.0),
+                            map_scale: 1.0,
+                            selected_screen: SelectedScreen::Inspect,
+                            err_msg: None,
+                        }),
+                    }
+                }
             },
             None,
         ),

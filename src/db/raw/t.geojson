@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "suburb-locality",
+"features": [
+{ "type": "Feature", "properties": { "id": 996, "parent_id": null, "name": "Mount Roskill", "type": "Suburb", "start_date": "2021\/08\/17", "name_ascii": "Mount Roskill" }, "geometry": { "type": "Polygon", "coordinates": [ [ [0.0, 0.0], [10.0, 0.0], [10.0, 10.0], [0.0, 10.0], [0.0, 0.0] ] ] } },
+{ "type": "Feature", "properties": { "id": 1444, "parent_id": null, "name": "Royal Oak", "type": "Suburb", "start_date": "2011\/04\/26", "name_ascii": "Royal Oak" }, "geometry": { "type": "Polygon", "coordinates": [ [ [0.0, 0.0], [-10.0, 0.0], [-10.0, -10.0], [0.0, -10.0], [0.0, 0.0] ] ] } }
+]
+}

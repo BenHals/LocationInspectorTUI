@@ -227,7 +227,10 @@ pub fn view(state: &AppState, f: &mut Frame) {
                 Some(n) => format!("<{}, {}>", n.x(), n.y()),
                 None => "No location found".to_string(),
             };
-            let map_center = Point::new(map_offset.x(), map_offset.y());
+            let map_center = match coord {
+                None => Point::new(map_offset.x(), map_offset.y()),
+                Some(c) => Point::new(c.x() + map_offset.x(), c.y() + map_offset.y()),
+            };
             let screen_layout_h = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints(vec![Constraint::Length(3), Constraint::Fill(1)])
@@ -243,6 +246,7 @@ pub fn view(state: &AppState, f: &mut Frame) {
             let summary_layout = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints(vec![
+                    Constraint::Length(1),
                     Constraint::Length(1),
                     Constraint::Length(1),
                     Constraint::Length(1),
@@ -309,6 +313,16 @@ pub fn view(state: &AppState, f: &mut Frame) {
             f.render_widget(
                 Paragraph::new(format!("Location: {}", coord_str,)),
                 summary_layout[2],
+            );
+            f.render_widget(
+                Paragraph::new(format!(
+                    "Bounds: {} {} {} {}",
+                    map_center.x() - (screen_layout[0].as_size().width as f64 * map_scale),
+                    map_center.y() - (screen_layout[0].as_size().height as f64 * map_scale),
+                    map_center.x() + (screen_layout[0].as_size().width as f64 * map_scale),
+                    map_center.y() + (screen_layout[0].as_size().height as f64 * map_scale),
+                )),
+                summary_layout[3],
             );
 
             f.render_widget(

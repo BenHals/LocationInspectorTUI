@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 crossterm = "0.27.0"
 geo = { version = "0.28.0", features = ["use-proj"] }
+geojson = "0.24.1"
 itertools = "0.13.0"
 proj = { version = "0.27.2", features = ["geo-types"] }
 ratatui = "0.26.1"
