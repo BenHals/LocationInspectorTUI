@@ -300,8 +300,10 @@ pub fn view(state: &AppState, f: &mut Frame) {
                         map_center.x() + (screen_layout[0].as_size().width as f64 * map_scale),
                     ])
                     .y_bounds([
-                        map_center.y() - (screen_layout[0].as_size().height as f64 * map_scale),
-                        map_center.y() + (screen_layout[0].as_size().height as f64 * map_scale),
+                        map_center.y()
+                            - (screen_layout[0].as_size().height as f64 * map_scale * 2.0),
+                        map_center.y()
+                            + (screen_layout[0].as_size().height as f64 * map_scale * 2.0),
                     ]),
                 screen_layout[0],
             );

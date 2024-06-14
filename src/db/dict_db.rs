@@ -50,37 +50,31 @@ impl DictDb {
                 _ => {}
             }
         }
-        println!("{}", auck_polys.len());
-        println!(
-            "{}, {}",
-            auck_polys.first().unwrap().centroid().unwrap().x_y().0,
-            auck_polys.first().unwrap().centroid().unwrap().x_y().1
-        );
+        polygons.insert("001".to_string(), auck_polys);
         polygons.insert(
-            "001".to_string(),
-            auck_polys,
-            // vec![
-            //     Polygon::new(
-            //         LineString::new(vec![
-            //             Coord { x: 0.0, y: 0.0 },
-            //             Coord { x: 10.0, y: 0.0 },
-            //             Coord { x: 10.0, y: 10.0 },
-            //             Coord { x: 0.0, y: 10.0 },
-            //             Coord { x: 0.0, y: 0.0 },
-            //         ]),
-            //         Vec::new(),
-            //     ),
-            //     Polygon::new(
-            //         LineString::new(vec![
-            //             Coord { x: 0.0, y: 0.0 },
-            //             Coord { x: -10.0, y: 0.0 },
-            //             Coord { x: -10.0, y: -10.0 },
-            //             Coord { x: 0.0, y: -10.0 },
-            //             Coord { x: 0.0, y: 0.0 },
-            //         ]),
-            //         Vec::new(),
-            //     ),
-            // ],
+            "010".to_string(),
+            vec![
+                Polygon::new(
+                    LineString::new(vec![
+                        Coord { x: 0.0, y: 0.0 },
+                        Coord { x: 10.0, y: 0.0 },
+                        Coord { x: 10.0, y: 10.0 },
+                        Coord { x: 0.0, y: 10.0 },
+                        Coord { x: 0.0, y: 0.0 },
+                    ]),
+                    Vec::new(),
+                ),
+                Polygon::new(
+                    LineString::new(vec![
+                        Coord { x: 0.0, y: 0.0 },
+                        Coord { x: -10.0, y: 0.0 },
+                        Coord { x: -10.0, y: -10.0 },
+                        Coord { x: 0.0, y: -10.0 },
+                        Coord { x: 0.0, y: 0.0 },
+                    ]),
+                    Vec::new(),
+                ),
+            ],
         );
         Self {
             ids,
