@@ -23,7 +23,7 @@ impl MainScreen {
             err_msg: None,
         }
     }
-    pub fn clear_err(self: &mut Self) -> () {
+    pub fn clear_err(&mut self) {
         self.err_msg = None
     }
 }
@@ -49,7 +49,7 @@ pub fn main_screen_update(
             )
         }
         Message::Decrement => {
-            let mut key = screen.key.clone();
+            let mut key = screen.key;
             let mut err_msg: Option<String> = None;
             if key > 0 {
                 key -= 1;
@@ -83,8 +83,8 @@ pub fn main_screen_update(
                     None,
                 ),
                 Some(id) => {
-                    let name = db.get_name(&id);
-                    let coord = db.get_latlng(&id);
+                    let name = db.get_name(id);
+                    let coord = db.get_latlng(id);
                     (
                         AppState {
                             app_state: RunningState::Running,

@@ -33,7 +33,7 @@ impl SummaryScreen {
             err_msg: None,
         }
     }
-    pub fn clear_err(self: &mut Self) -> () {
+    pub fn clear_err(&mut self) {
         self.err_msg = None
     }
 }
@@ -48,13 +48,9 @@ pub fn summary_screen_update(
             AppState {
                 app_state: RunningState::Running,
                 active_screen: Screen::Summary(SummaryScreen {
-                    id: screen.id.clone(),
-                    name: screen.name.clone(),
-                    coord: screen.coord.clone(),
-                    map_offset: screen.map_offset.clone(),
                     map_scale: screen.map_scale - 0.1,
-                    selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
+                    ..screen.clone()
                 }),
             },
             None,
@@ -63,13 +59,9 @@ pub fn summary_screen_update(
             AppState {
                 app_state: RunningState::Running,
                 active_screen: Screen::Summary(SummaryScreen {
-                    id: screen.id.clone(),
-                    name: screen.name.clone(),
-                    coord: screen.coord.clone(),
-                    map_offset: screen.map_offset.clone(),
                     map_scale: screen.map_scale + 0.1,
-                    selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
+                    ..screen.clone()
                 }),
             },
             None,
@@ -78,13 +70,9 @@ pub fn summary_screen_update(
             AppState {
                 app_state: RunningState::Running,
                 active_screen: Screen::Summary(SummaryScreen {
-                    id: screen.id.clone(),
-                    name: screen.name.clone(),
-                    coord: screen.coord.clone(),
                     map_offset: Point::new(screen.map_offset.x(), screen.map_offset.y() + 1.0),
-                    map_scale: screen.map_scale.clone(),
-                    selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
+                    ..screen.clone()
                 }),
             },
             None,
@@ -93,13 +81,9 @@ pub fn summary_screen_update(
             AppState {
                 app_state: RunningState::Running,
                 active_screen: Screen::Summary(SummaryScreen {
-                    id: screen.id.clone(),
-                    name: screen.name.clone(),
-                    coord: screen.coord.clone(),
                     map_offset: Point::new(screen.map_offset.x() - 1.0, screen.map_offset.y()),
-                    map_scale: screen.map_scale.clone(),
-                    selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
+                    ..screen.clone()
                 }),
             },
             None,
@@ -108,13 +92,9 @@ pub fn summary_screen_update(
             AppState {
                 app_state: RunningState::Running,
                 active_screen: Screen::Summary(SummaryScreen {
-                    id: screen.id.clone(),
-                    name: screen.name.clone(),
-                    coord: screen.coord.clone(),
                     map_offset: Point::new(screen.map_offset.x(), screen.map_offset.y() - 1.0),
-                    map_scale: screen.map_scale.clone(),
-                    selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
+                    ..screen.clone()
                 }),
             },
             None,
@@ -123,13 +103,9 @@ pub fn summary_screen_update(
             AppState {
                 app_state: RunningState::Running,
                 active_screen: Screen::Summary(SummaryScreen {
-                    id: screen.id.clone(),
-                    name: screen.name.clone(),
-                    coord: screen.coord.clone(),
                     map_offset: Point::new(screen.map_offset.x() + 1.0, screen.map_offset.y()),
-                    map_scale: screen.map_scale.clone(),
-                    selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
+                    ..screen.clone()
                 }),
             },
             None,
@@ -138,17 +114,13 @@ pub fn summary_screen_update(
             AppState {
                 app_state: RunningState::Running,
                 active_screen: Screen::Summary(SummaryScreen {
-                    id: screen.id.clone(),
-                    name: screen.name.clone(),
-                    coord: screen.coord.clone(),
-                    map_offset: screen.map_offset.clone(),
-                    map_scale: screen.map_scale.clone(),
                     selected_screen: match screen.selected_screen {
                         SelectedScreen::Main => SelectedScreen::Summary,
                         SelectedScreen::Summary => SelectedScreen::Inspect,
                         SelectedScreen::Inspect => SelectedScreen::Main,
                     },
                     err_msg: None,
+                    ..screen.clone()
                 }),
             },
             None,

@@ -1,15 +1,12 @@
-use core::panic;
 use geo::Transform;
 use proj::Proj;
 use std::collections::HashMap;
 
-use geo::Centroid;
 use geo::Coord;
 use geo::Geometry;
 use geo::LineString;
 use geo::Point;
 use geo::Polygon;
-use geojson::Feature;
 use geojson::FeatureCollection;
 use geojson::GeoJson;
 
@@ -24,27 +21,34 @@ pub struct DictDb {
 
 impl DictDb {
     pub fn new() -> Self {
+        Self {
+            ids: Vec::new(),
+            name_data: HashMap::new(),
+            loc_data: HashMap::new(),
+            polygons: HashMap::new()
+        }
+    }
+    pub fn load_placeholder() -> Result<Self, Box<dyn std::error::Error>> {
         let ids = vec!["001".to_string(), "010".to_string()];
         let mut name_data = HashMap::new();
         name_data.insert("001".to_string(), "Auckland".to_string());
         let mut loc_data = HashMap::new();
         loc_data.insert("001".to_string(), Point::new(174.763336, -36.848461));
         let mut polygons = HashMap::new();
-        let geojson_str = std::fs::read_to_string("src/db/raw/001.geojson").unwrap();
-        let geojson_fc: geojson::GeoJson = geojson_str.parse::<GeoJson>().unwrap();
-        let feature: FeatureCollection = FeatureCollection::try_from(geojson_fc).unwrap();
+        let geojson_str = std::fs::read_to_string("src/db/raw/001.geojson")?;
+        let geojson_fc: geojson::GeoJson = geojson_str.parse::<GeoJson>()?;
+        let feature: FeatureCollection = FeatureCollection::try_from(geojson_fc)?;
         let mut auck_polys: Vec<Polygon> = Vec::new();
-        let proj = Proj::new_known_crs("EPSG:4326", "EPSG:32760", None).unwrap();
+        let proj = Proj::new_known_crs("EPSG:4326", "EPSG:32760", None)?;
         for f in feature.features {
-            let g: Geometry = Geometry::try_from(f.geometry.unwrap()).unwrap();
+            let g: Geometry = Geometry::try_from(f.geometry.unwrap())?;
             match g {
                 Geometry::Polygon(poly) => {
-                    // let poly: Polygon<f64> = Polygon::try_from(g).unwrap();
-                    auck_polys.push(poly.transformed(&proj).unwrap());
+                    auck_polys.push(poly.transformed(&proj)?);
                 }
                 Geometry::MultiPolygon(multipoly) => {
                     for poly in multipoly {
-                        auck_polys.push(poly.transformed(&proj).unwrap());
+                        auck_polys.push(poly.transformed(&proj)?);
                     }
                 }
                 _ => {}
@@ -76,32 +80,35 @@ impl DictDb {
                 ),
             ],
         );
-        Self {
+        Ok(Self {
             ids,
             name_data,
             loc_data,
             polygons,
-        }
+        })
+    }
+}
+
+impl Default for DictDb {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
 impl DbConnection for DictDb {
-    fn get_id(self: &Self, idx: &usize) -> Option<String> {
+    fn get_id(&self, idx: &usize) -> Option<String> {
         Some(self.ids.get(*idx)?.clone())
     }
 
-    fn get_name(&self, id: &String) -> Option<String> {
-        let name = self.name_data.get(id)?.clone();
-        Some(name)
+    fn get_name(&self, id: &str) -> Option<String> {
+        self.name_data.get(id).cloned()
     }
 
-    fn get_latlng(self: &Self, id: &String) -> Option<Point> {
-        let loc = self.loc_data.get(id)?.clone();
-        Some(loc)
+    fn get_latlng(&self, id: &str) -> Option<Point> {
+        self.loc_data.get(id).copied()
     }
 
-    fn get_polygons(self: &Self, id: &String) -> Option<Vec<Polygon>> {
-        let polys = self.polygons.get(id)?.clone();
-        Some(polys)
+    fn get_polygons(&self, id: &str) -> Option<Vec<Polygon>> {
+        self.polygons.get(id).cloned()
     }
 }

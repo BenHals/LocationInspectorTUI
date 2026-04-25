@@ -36,7 +36,7 @@ impl InspectScreen {
             err_msg: None,
         }
     }
-    pub fn clear_err(self: &mut Self) -> () {
+    pub fn clear_err(&mut self)  {
         self.err_msg = None
     }
 }
@@ -51,14 +51,9 @@ pub fn inspect_screen_update(
             AppState {
                 app_state: RunningState::Running,
                 active_screen: Screen::Inspect(InspectScreen {
-                    id: screen.id.clone(),
-                    name: screen.name.clone(),
-                    coord: screen.coord.clone(),
-                    polygons: screen.polygons.clone(),
-                    map_offset: screen.map_offset.clone(),
                     map_scale: screen.map_scale * 0.9,
-                    selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
+                    ..screen.clone()
                 }),
             },
             None,
@@ -67,14 +62,9 @@ pub fn inspect_screen_update(
             AppState {
                 app_state: RunningState::Running,
                 active_screen: Screen::Inspect(InspectScreen {
-                    id: screen.id.clone(),
-                    name: screen.name.clone(),
-                    coord: screen.coord.clone(),
-                    polygons: screen.polygons.clone(),
-                    map_offset: screen.map_offset.clone(),
                     map_scale: screen.map_scale * 1.1,
-                    selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
+                    ..screen.clone()
                 }),
             },
             None,
@@ -83,17 +73,12 @@ pub fn inspect_screen_update(
             AppState {
                 app_state: RunningState::Running,
                 active_screen: Screen::Inspect(InspectScreen {
-                    id: screen.id.clone(),
-                    name: screen.name.clone(),
-                    coord: screen.coord.clone(),
-                    polygons: screen.polygons.clone(),
                     map_offset: Point::new(
                         screen.map_offset.x(),
                         screen.map_offset.y() + screen.map_scale,
                     ),
-                    map_scale: screen.map_scale.clone(),
-                    selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
+                    ..screen.clone()
                 }),
             },
             None,
@@ -102,17 +87,12 @@ pub fn inspect_screen_update(
             AppState {
                 app_state: RunningState::Running,
                 active_screen: Screen::Inspect(InspectScreen {
-                    id: screen.id.clone(),
-                    name: screen.name.clone(),
-                    coord: screen.coord.clone(),
-                    polygons: screen.polygons.clone(),
                     map_offset: Point::new(
                         screen.map_offset.x() - screen.map_scale,
                         screen.map_offset.y(),
                     ),
-                    map_scale: screen.map_scale.clone(),
-                    selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
+                    ..screen.clone()
                 }),
             },
             None,
@@ -121,17 +101,12 @@ pub fn inspect_screen_update(
             AppState {
                 app_state: RunningState::Running,
                 active_screen: Screen::Inspect(InspectScreen {
-                    id: screen.id.clone(),
-                    name: screen.name.clone(),
-                    coord: screen.coord.clone(),
-                    polygons: screen.polygons.clone(),
                     map_offset: Point::new(
                         screen.map_offset.x(),
                         screen.map_offset.y() - screen.map_scale,
                     ),
-                    map_scale: screen.map_scale.clone(),
-                    selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
+                    ..screen.clone()
                 }),
             },
             None,
@@ -140,17 +115,12 @@ pub fn inspect_screen_update(
             AppState {
                 app_state: RunningState::Running,
                 active_screen: Screen::Inspect(InspectScreen {
-                    id: screen.id.clone(),
-                    name: screen.name.clone(),
-                    coord: screen.coord.clone(),
-                    polygons: screen.polygons.clone(),
                     map_offset: Point::new(
                         screen.map_offset.x() + screen.map_scale,
                         screen.map_offset.y(),
                     ),
-                    map_scale: screen.map_scale.clone(),
-                    selected_screen: screen.selected_screen.clone(),
                     err_msg: None,
+                    ..screen.clone()
                 }),
             },
             None,
@@ -159,18 +129,13 @@ pub fn inspect_screen_update(
             AppState {
                 app_state: RunningState::Running,
                 active_screen: Screen::Inspect(InspectScreen {
-                    id: screen.id.clone(),
-                    name: screen.name.clone(),
-                    coord: screen.coord.clone(),
-                    polygons: screen.polygons.clone(),
-                    map_offset: screen.map_offset.clone(),
-                    map_scale: screen.map_scale.clone(),
                     selected_screen: match screen.selected_screen {
                         SelectedScreen::Main => SelectedScreen::Summary,
                         SelectedScreen::Summary => SelectedScreen::Inspect,
                         SelectedScreen::Inspect => SelectedScreen::Main,
                     },
                     err_msg: None,
+                    ..screen.clone()
                 }),
             },
             None,
@@ -190,7 +155,7 @@ pub fn inspect_screen_update(
                     active_screen: super::Screen::Summary(SummaryScreen {
                         id: screen.id.clone(),
                         name: screen.name.clone(),
-                        coord: screen.coord.clone(),
+                        coord: screen.coord,
                         map_offset: Point::new(0.0, 0.0),
                         map_scale: 1.0,
                         selected_screen: SelectedScreen::Summary,

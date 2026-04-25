@@ -9,7 +9,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     tui::install_panic_hook();
 
     let mut terminal = tui::init_terminal()?;
-    let db = DictDb::new();
+    let db = DictDb::load_placeholder()?;
     let mut app_state = AppState::initial_app_state(&db);
 
     while app_state.app_state != RunningState::Done {
