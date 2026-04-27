@@ -25,7 +25,7 @@ impl DictDb {
             ids: Vec::new(),
             name_data: HashMap::new(),
             loc_data: HashMap::new(),
-            polygons: HashMap::new()
+            polygons: HashMap::new(),
         }
     }
     pub fn load_placeholder() -> Result<Self, Box<dyn std::error::Error>> {

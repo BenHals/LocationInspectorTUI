@@ -52,6 +52,7 @@ pub fn summary_screen_update(
                     err_msg: None,
                     ..screen.clone()
                 }),
+                error_msg: None,
             },
             None,
         ),
@@ -63,6 +64,7 @@ pub fn summary_screen_update(
                     err_msg: None,
                     ..screen.clone()
                 }),
+                error_msg: None,
             },
             None,
         ),
@@ -74,6 +76,7 @@ pub fn summary_screen_update(
                     err_msg: None,
                     ..screen.clone()
                 }),
+                error_msg: None,
             },
             None,
         ),
@@ -85,6 +88,7 @@ pub fn summary_screen_update(
                     err_msg: None,
                     ..screen.clone()
                 }),
+                error_msg: None,
             },
             None,
         ),
@@ -96,6 +100,7 @@ pub fn summary_screen_update(
                     err_msg: None,
                     ..screen.clone()
                 }),
+                error_msg: None,
             },
             None,
         ),
@@ -107,6 +112,7 @@ pub fn summary_screen_update(
                     err_msg: None,
                     ..screen.clone()
                 }),
+                error_msg: None,
             },
             None,
         ),
@@ -122,6 +128,7 @@ pub fn summary_screen_update(
                     err_msg: None,
                     ..screen.clone()
                 }),
+                error_msg: None,
             },
             None,
         ),
@@ -134,10 +141,12 @@ pub fn summary_screen_update(
                         id: None,
                         err_msg: Some("Select Location".to_string()),
                     }),
+                    error_msg: None,
                 },
                 SelectedScreen::Summary => AppState {
                     app_state: RunningState::Running,
                     active_screen: Screen::Summary(screen.clone()),
+                    error_msg: None,
                 },
                 SelectedScreen::Inspect => {
                     let polys = db.get_polygons(&screen.id).unwrap();
@@ -154,15 +163,9 @@ pub fn summary_screen_update(
                             selected_screen: SelectedScreen::Inspect,
                             err_msg: None,
                         }),
+                        error_msg: None,
                     }
                 }
-            },
-            None,
-        ),
-        Message::Quit => (
-            AppState {
-                app_state: RunningState::Done,
-                active_screen: super::Screen::Summary(screen.clone()),
             },
             None,
         ),
@@ -170,6 +173,7 @@ pub fn summary_screen_update(
             AppState {
                 app_state: RunningState::Running,
                 active_screen: super::Screen::Summary(screen.clone()),
+                error_msg: None,
             },
             None,
         ),

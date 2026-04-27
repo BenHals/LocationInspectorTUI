@@ -36,7 +36,7 @@ impl InspectScreen {
             err_msg: None,
         }
     }
-    pub fn clear_err(&mut self)  {
+    pub fn clear_err(&mut self) {
         self.err_msg = None
     }
 }
@@ -55,6 +55,7 @@ pub fn inspect_screen_update(
                     err_msg: None,
                     ..screen.clone()
                 }),
+                error_msg: None,
             },
             None,
         ),
@@ -66,6 +67,7 @@ pub fn inspect_screen_update(
                     err_msg: None,
                     ..screen.clone()
                 }),
+                error_msg: None,
             },
             None,
         ),
@@ -80,6 +82,7 @@ pub fn inspect_screen_update(
                     err_msg: None,
                     ..screen.clone()
                 }),
+                error_msg: None,
             },
             None,
         ),
@@ -94,6 +97,7 @@ pub fn inspect_screen_update(
                     err_msg: None,
                     ..screen.clone()
                 }),
+                error_msg: None,
             },
             None,
         ),
@@ -108,6 +112,7 @@ pub fn inspect_screen_update(
                     err_msg: None,
                     ..screen.clone()
                 }),
+                error_msg: None,
             },
             None,
         ),
@@ -122,6 +127,7 @@ pub fn inspect_screen_update(
                     err_msg: None,
                     ..screen.clone()
                 }),
+                error_msg: None,
             },
             None,
         ),
@@ -137,6 +143,7 @@ pub fn inspect_screen_update(
                     err_msg: None,
                     ..screen.clone()
                 }),
+                error_msg: None,
             },
             None,
         ),
@@ -149,6 +156,7 @@ pub fn inspect_screen_update(
                         id: None,
                         err_msg: Some("Select Location".to_string()),
                     }),
+                    error_msg: None,
                 },
                 SelectedScreen::Summary => AppState {
                     app_state: RunningState::Running,
@@ -161,18 +169,13 @@ pub fn inspect_screen_update(
                         selected_screen: SelectedScreen::Summary,
                         err_msg: None,
                     }),
+                    error_msg: None,
                 },
                 SelectedScreen::Inspect => AppState {
                     app_state: RunningState::Running,
                     active_screen: Screen::Inspect(screen.clone()),
+                    error_msg: None,
                 },
-            },
-            None,
-        ),
-        Message::Quit => (
-            AppState {
-                app_state: RunningState::Done,
-                active_screen: super::Screen::Inspect(screen.clone()),
             },
             None,
         ),
@@ -180,6 +183,7 @@ pub fn inspect_screen_update(
             AppState {
                 app_state: RunningState::Running,
                 active_screen: super::Screen::Inspect(screen.clone()),
+                error_msg: None,
             },
             None,
         ),

@@ -44,6 +44,7 @@ pub fn main_screen_update(
                         id: db.get_id(&key),
                         err_msg: None,
                     }),
+                    error_msg: None,
                 },
                 None,
             )
@@ -64,6 +65,7 @@ pub fn main_screen_update(
                         id: db.get_id(&key),
                         err_msg,
                     }),
+                    error_msg: None,
                 },
                 None,
             )
@@ -79,6 +81,7 @@ pub fn main_screen_update(
                             id: db.get_id(&screen.key),
                             err_msg: Some("No valid ID found".to_string()),
                         }),
+                        error_msg: None,
                     },
                     None,
                 ),
@@ -97,6 +100,7 @@ pub fn main_screen_update(
                                 selected_screen: SelectedScreen::Summary,
                                 err_msg: None,
                             }),
+                            error_msg: None,
                         },
                         None,
                     )
@@ -111,27 +115,15 @@ pub fn main_screen_update(
                     id: db.get_id(&0),
                     err_msg: None,
                 }),
+                error_msg: None,
             },
             None,
         ),
-        Message::Quit => {
-            let key = screen.key;
-            (
-                AppState {
-                    app_state: RunningState::Done,
-                    active_screen: Screen::Main(MainScreen {
-                        key,
-                        id: db.get_id(&key),
-                        err_msg: None,
-                    }),
-                },
-                None,
-            )
-        }
         _ => (
             AppState {
                 app_state: RunningState::Running,
                 active_screen: Screen::Main(screen.clone()),
+                error_msg: None,
             },
             None,
         ),

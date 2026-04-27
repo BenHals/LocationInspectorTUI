@@ -1,5 +1,6 @@
 pub mod geometry;
 pub mod inspect_screen;
+pub mod location;
 pub mod main_screen;
 pub mod screens;
 pub mod summary_screen;
@@ -23,6 +24,7 @@ pub enum Screen {
 pub struct AppState {
     pub app_state: RunningState,
     pub active_screen: Screen,
+    pub error_msg: Option<String>,
 }
 
 impl AppState {
@@ -34,6 +36,7 @@ impl AppState {
                 id: db.get_id(&0),
                 err_msg: None,
             }),
+            error_msg: None,
         }
     }
 }
@@ -47,10 +50,22 @@ pub enum RunningState {
 }
 
 pub fn update(state: AppState, msg: Message, db: &dyn DbConnection) -> (AppState, Option<Message>) {
+    match msg {
+        Message::Quit => {
+            return (
+                AppState {
+                    app_state: RunningState::Done,
+                    ..state
+                },
+                None,
+            )
+        }
+        _ => {}
+    }
     let (next_state, next_msg) = match &state.active_screen {
         Screen::Main(screen) => main_screen_update(db, &msg, screen),
-        Screen::Summary(screen) => summary_screen_update(db, &msg, &screen),
-        Screen::Inspect(screen) => inspect_screen_update(db, &msg, &screen),
+        Screen::Summary(screen) => summary_screen_update(db, &msg, screen),
+        Screen::Inspect(screen) => inspect_screen_update(db, &msg, screen),
     };
     (next_state, next_msg)
 }
