@@ -1,11 +1,6 @@
 use geo::{Centroid, Point};
 
-use crate::{
-    db::DbConnection,
-    event_handling::Message,
-    model::Screen,
-    model::{AppState, RunningState},
-};
+use crate::{db::DbConnection, event_handling::Message, model::Screen};
 
 use super::main_screen::MainScreen;
 use super::screens::SelectedScreen;
@@ -42,141 +37,94 @@ pub fn summary_screen_update(
     db: &dyn DbConnection,
     msg: &Message,
     screen: &SummaryScreen,
-) -> (AppState, Option<Message>) {
-    let (next_state, next_msg) = match msg {
+) -> (Screen, Option<Message>) {
+    let (next_screen, next_msg) = match msg {
         Message::ZoomIn => (
-            AppState {
-                app_state: RunningState::Running,
-                active_screen: Screen::Summary(SummaryScreen {
-                    map_scale: screen.map_scale - 0.1,
-                    err_msg: None,
-                    ..screen.clone()
-                }),
-                error_msg: None,
-            },
+            Screen::Summary(SummaryScreen {
+                map_scale: screen.map_scale - 0.1,
+                err_msg: None,
+                ..screen.clone()
+            }),
             None,
         ),
         Message::ZoomOut => (
-            AppState {
-                app_state: RunningState::Running,
-                active_screen: Screen::Summary(SummaryScreen {
-                    map_scale: screen.map_scale + 0.1,
-                    err_msg: None,
-                    ..screen.clone()
-                }),
-                error_msg: None,
-            },
+            Screen::Summary(SummaryScreen {
+                map_scale: screen.map_scale + 0.1,
+                err_msg: None,
+                ..screen.clone()
+            }),
             None,
         ),
         Message::ShiftUp => (
-            AppState {
-                app_state: RunningState::Running,
-                active_screen: Screen::Summary(SummaryScreen {
-                    map_offset: Point::new(screen.map_offset.x(), screen.map_offset.y() + 1.0),
-                    err_msg: None,
-                    ..screen.clone()
-                }),
-                error_msg: None,
-            },
+            Screen::Summary(SummaryScreen {
+                map_offset: Point::new(screen.map_offset.x(), screen.map_offset.y() + 1.0),
+                err_msg: None,
+                ..screen.clone()
+            }),
             None,
         ),
         Message::ShiftLeft => (
-            AppState {
-                app_state: RunningState::Running,
-                active_screen: Screen::Summary(SummaryScreen {
-                    map_offset: Point::new(screen.map_offset.x() - 1.0, screen.map_offset.y()),
-                    err_msg: None,
-                    ..screen.clone()
-                }),
-                error_msg: None,
-            },
+            Screen::Summary(SummaryScreen {
+                map_offset: Point::new(screen.map_offset.x() - 1.0, screen.map_offset.y()),
+                err_msg: None,
+                ..screen.clone()
+            }),
             None,
         ),
         Message::ShiftDown => (
-            AppState {
-                app_state: RunningState::Running,
-                active_screen: Screen::Summary(SummaryScreen {
-                    map_offset: Point::new(screen.map_offset.x(), screen.map_offset.y() - 1.0),
-                    err_msg: None,
-                    ..screen.clone()
-                }),
-                error_msg: None,
-            },
+            Screen::Summary(SummaryScreen {
+                map_offset: Point::new(screen.map_offset.x(), screen.map_offset.y() - 1.0),
+                err_msg: None,
+                ..screen.clone()
+            }),
             None,
         ),
         Message::ShiftRight => (
-            AppState {
-                app_state: RunningState::Running,
-                active_screen: Screen::Summary(SummaryScreen {
-                    map_offset: Point::new(screen.map_offset.x() + 1.0, screen.map_offset.y()),
-                    err_msg: None,
-                    ..screen.clone()
-                }),
-                error_msg: None,
-            },
+            Screen::Summary(SummaryScreen {
+                map_offset: Point::new(screen.map_offset.x() + 1.0, screen.map_offset.y()),
+                err_msg: None,
+                ..screen.clone()
+            }),
             None,
         ),
         Message::Tab => (
-            AppState {
-                app_state: RunningState::Running,
-                active_screen: Screen::Summary(SummaryScreen {
-                    selected_screen: match screen.selected_screen {
-                        SelectedScreen::Main => SelectedScreen::Summary,
-                        SelectedScreen::Summary => SelectedScreen::Inspect,
-                        SelectedScreen::Inspect => SelectedScreen::Main,
-                    },
-                    err_msg: None,
-                    ..screen.clone()
-                }),
-                error_msg: None,
-            },
+            Screen::Summary(SummaryScreen {
+                selected_screen: match screen.selected_screen {
+                    SelectedScreen::Main => SelectedScreen::Summary,
+                    SelectedScreen::Summary => SelectedScreen::Inspect,
+                    SelectedScreen::Inspect => SelectedScreen::Main,
+                },
+                err_msg: None,
+                ..screen.clone()
+            }),
             None,
         ),
         Message::Select => (
             match screen.selected_screen {
-                SelectedScreen::Main => AppState {
-                    app_state: RunningState::Running,
-                    active_screen: super::Screen::Main(MainScreen {
-                        key: 0,
-                        id: None,
-                        err_msg: Some("Select Location".to_string()),
-                    }),
-                    error_msg: None,
-                },
-                SelectedScreen::Summary => AppState {
-                    app_state: RunningState::Running,
-                    active_screen: Screen::Summary(screen.clone()),
-                    error_msg: None,
-                },
+                SelectedScreen::Main => super::Screen::Main(MainScreen {
+                    key: 0,
+                    id: None,
+                    err_msg: Some("Select Location".to_string()),
+                }),
+                SelectedScreen::Summary => Screen::Summary(screen.clone()),
                 SelectedScreen::Inspect => {
                     let polys = db.get_polygons(&screen.id).unwrap();
                     let center = polys[0].centroid().unwrap();
-                    AppState {
-                        app_state: RunningState::Running,
-                        active_screen: Screen::Inspect(super::inspect_screen::InspectScreen {
-                            id: screen.id.clone(),
-                            name: screen.name.clone(),
-                            coord: Some(center),
-                            polygons: polys,
-                            map_offset: Point::new(0.0, 0.0),
-                            map_scale: 1.0,
-                            selected_screen: SelectedScreen::Inspect,
-                            err_msg: None,
-                        }),
-                        error_msg: None,
-                    }
+                    Screen::Inspect(super::inspect_screen::InspectScreen {
+                        id: screen.id.clone(),
+                        name: screen.name.clone(),
+                        coord: Some(center),
+                        polygons: polys,
+                        map_offset: Point::new(0.0, 0.0),
+                        map_scale: 1.0,
+                        selected_screen: SelectedScreen::Inspect,
+                        err_msg: None,
+                    })
                 }
             },
             None,
         ),
-        _ => (
-            AppState {
-                app_state: RunningState::Running,
-                active_screen: super::Screen::Summary(screen.clone()),
-                error_msg: None,
-            },
-            None,
-        ),
+        _ => (super::Screen::Summary(screen.clone()), None),
     };
-    (next_state, next_msg)
+    (next_screen, next_msg)
 }

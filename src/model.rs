@@ -62,10 +62,14 @@ pub fn update(state: AppState, msg: Message, db: &dyn DbConnection) -> (AppState
         }
         _ => {}
     }
-    let (next_state, next_msg) = match &state.active_screen {
+    let (next_screen, next_msg) = match &state.active_screen {
         Screen::Main(screen) => main_screen_update(db, &msg, screen),
         Screen::Summary(screen) => summary_screen_update(db, &msg, screen),
         Screen::Inspect(screen) => inspect_screen_update(db, &msg, screen),
+    };
+    let next_state = AppState {
+        active_screen: next_screen,
+        ..state
     };
     (next_state, next_msg)
 }

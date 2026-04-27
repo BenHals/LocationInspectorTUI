@@ -1,8 +1,5 @@
 use crate::{
-    db::DbConnection,
-    event_handling::Message,
-    model::summary_screen::SummaryScreen,
-    model::{AppState, RunningState, Screen},
+    db::DbConnection, event_handling::Message, model::summary_screen::SummaryScreen, model::Screen,
 };
 use geo::Point;
 
@@ -32,20 +29,16 @@ pub fn main_screen_update(
     db: &dyn DbConnection,
     msg: &Message,
     screen: &MainScreen,
-) -> (AppState, Option<Message>) {
-    let (next_state, next_msg) = match msg {
+) -> (Screen, Option<Message>) {
+    let (next_screen, next_msg) = match msg {
         Message::Increment => {
             let key = screen.key + 1;
             (
-                AppState {
-                    app_state: RunningState::Running,
-                    active_screen: Screen::Main(MainScreen {
-                        key,
-                        id: db.get_id(&key),
-                        err_msg: None,
-                    }),
-                    error_msg: None,
-                },
+                Screen::Main(MainScreen {
+                    key,
+                    id: db.get_id(&key),
+                    err_msg: None,
+                }),
                 None,
             )
         }
@@ -58,15 +51,11 @@ pub fn main_screen_update(
                 err_msg = Some("No More IDs!".to_string());
             }
             (
-                AppState {
-                    app_state: RunningState::Running,
-                    active_screen: Screen::Main(MainScreen {
-                        key,
-                        id: db.get_id(&key),
-                        err_msg,
-                    }),
-                    error_msg: None,
-                },
+                Screen::Main(MainScreen {
+                    key,
+                    id: db.get_id(&key),
+                    err_msg,
+                }),
                 None,
             )
         }
@@ -74,59 +63,40 @@ pub fn main_screen_update(
             let id = &screen.id;
             match id {
                 None => (
-                    AppState {
-                        app_state: RunningState::Running,
-                        active_screen: Screen::Main(MainScreen {
-                            key: screen.key,
-                            id: db.get_id(&screen.key),
-                            err_msg: Some("No valid ID found".to_string()),
-                        }),
-                        error_msg: None,
-                    },
+                    Screen::Main(MainScreen {
+                        key: screen.key,
+                        id: db.get_id(&screen.key),
+                        err_msg: Some("No valid ID found".to_string()),
+                    }),
                     None,
                 ),
                 Some(id) => {
                     let name = db.get_name(id);
                     let coord = db.get_latlng(id);
                     (
-                        AppState {
-                            app_state: RunningState::Running,
-                            active_screen: Screen::Summary(SummaryScreen {
-                                id: id.clone(),
-                                name,
-                                coord,
-                                map_offset: Point::new(0.0, 0.0),
-                                map_scale: 1.0,
-                                selected_screen: SelectedScreen::Summary,
-                                err_msg: None,
-                            }),
-                            error_msg: None,
-                        },
+                        Screen::Summary(SummaryScreen {
+                            id: id.clone(),
+                            name,
+                            coord,
+                            map_offset: Point::new(0.0, 0.0),
+                            map_scale: 1.0,
+                            selected_screen: SelectedScreen::Summary,
+                            err_msg: None,
+                        }),
                         None,
                     )
                 }
             }
         }
         Message::Reset => (
-            AppState {
-                app_state: RunningState::Running,
-                active_screen: Screen::Main(MainScreen {
-                    key: 0,
-                    id: db.get_id(&0),
-                    err_msg: None,
-                }),
-                error_msg: None,
-            },
+            Screen::Main(MainScreen {
+                key: 0,
+                id: db.get_id(&0),
+                err_msg: None,
+            }),
             None,
         ),
-        _ => (
-            AppState {
-                app_state: RunningState::Running,
-                active_screen: Screen::Main(screen.clone()),
-                error_msg: None,
-            },
-            None,
-        ),
+        _ => (Screen::Main(screen.clone()), None),
     };
-    (next_state, next_msg)
+    (next_screen, next_msg)
 }
