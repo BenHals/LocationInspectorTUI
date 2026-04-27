@@ -1,8 +1,8 @@
-use loctui::db::dict_db::DictDb;
-use loctui::event_handling::handle_event;
-use loctui::model::{update, AppState, RunningState};
-use loctui::tui;
-use loctui::view::view;
+use loctui_legacy::db::dict_db::DictDb;
+use loctui_legacy::event_handling::handle_event;
+use loctui_legacy::model::{update, AppState, RunningState};
+use loctui_legacy::tui;
+use loctui_legacy::view::view;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Hello, world!");
