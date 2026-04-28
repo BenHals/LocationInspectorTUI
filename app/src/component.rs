@@ -1,8 +1,9 @@
 use ratatui::{layout::Rect, Frame};
 
-use crate::{db::file_db::FileDB, message::Message, model::Model, update::Update};
+use crate::{db::file_db::FileDB, message::Message, update::Update};
 
 pub trait Component {
-    fn update(&mut self, msg: &Message, model: &Model, db: &FileDB) -> Vec<Update>;
-    fn render(&self, frame: &mut Frame, area: Rect, model: &Model);
+    type Ctx<'a>;
+    fn update<'a>(&mut self, msg: &Message, ctx: Self::Ctx<'a>, db: &FileDB) -> Vec<Update>;
+    fn render<'a>(&self, frame: &mut Frame, area: Rect, ctx: Self::Ctx<'a>);
 }

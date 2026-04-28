@@ -1,14 +1,14 @@
 use ratatui::{layout::Rect, widgets::Paragraph, Frame};
 
 use crate::{
-    component::Component,
-    db::{db_connection::DBConnection, file_db::FileDB},
-    domain::location::{Location, LocationTag},
-    message::Message,
-    model::Model,
+    component::Component, db::file_db::FileDB, domain::location::Location, message::Message,
     update::Update,
 };
 
+pub struct SummaryScreenCtx<'a> {
+    pub location: &'a Location,
+    pub err: &'a Option<String>,
+}
 pub struct SummaryScreen {}
 
 impl SummaryScreen {
@@ -18,21 +18,19 @@ impl SummaryScreen {
 }
 
 impl Component for SummaryScreen {
-    fn update(&mut self, msg: &Message, _model: &Model, db: &FileDB) -> Vec<Update> {
+    type Ctx<'a> = SummaryScreenCtx<'a>;
+    fn update(&mut self, msg: &Message, _ctx: SummaryScreenCtx, _db: &FileDB) -> Vec<Update> {
         match msg {
             _ => vec![],
         }
     }
 
-    fn render(&self, frame: &mut Frame, area: Rect, model: &Model) {
-        let err_str = match &model.err {
+    fn render<'a>(&self, frame: &mut Frame, area: Rect, ctx: SummaryScreenCtx<'a>) {
+        let err_str = match &ctx.err {
             Some(err) => format!(" - {}", err),
             _ => String::new(),
         };
-        let summary_string = match &model.selected_location {
-            Some(location) => format!("Location name {}", location.tag.name),
-            _ => "No location selected".to_string(),
-        };
+        let summary_string = format!("Location name {}", ctx.location.tag.name);
         let p = Paragraph::new(format!("Summary for: {}{}", summary_string, err_str));
         frame.render_widget(p, area);
     }

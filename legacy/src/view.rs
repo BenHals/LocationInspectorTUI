@@ -6,7 +6,7 @@ use ratatui::{
     style::Color,
     widgets::{
         block::{Position, Title},
-        canvas::{Line, *},
+        canvas::*,
         *,
     },
 };

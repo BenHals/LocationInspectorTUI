@@ -4,8 +4,11 @@ use crate::{
     component::Component,
     db::file_db::FileDB,
     message::Message,
-    model::{Model, ScreenType},
-    screens::{location_select_screen::LocationSelectScreen, summary_screen::SummaryScreen},
+    model::{InspectingLocationView, InteractionMode, Model},
+    screens::{
+        location_select_screen::LocationSelectScreen,
+        summary_screen::{SummaryScreen, SummaryScreenCtx},
+    },
     update::Update,
 };
 
@@ -24,22 +27,41 @@ impl View {
 }
 
 impl Component for View {
-    fn update(&mut self, msg: &Message, model: &Model, db: &FileDB) -> Vec<Update> {
+    type Ctx<'a> = &'a Model;
+    fn update(&mut self, msg: &Message, ctx: &Model, db: &FileDB) -> Vec<Update> {
         match msg {
             Message::Quit => return vec![Update::Quit],
             _ => {}
         }
-        match model.screen {
-            ScreenType::LocationSelect => self.location_select_screen.update(msg, model, db),
-            ScreenType::Summary => self.summary_screen.update(msg, model, db),
-            _ => vec![],
+        match &ctx.interaction_mode {
+            InteractionMode::BrowsingLocation => self.location_select_screen.update(msg, ctx, db),
+            InteractionMode::InspectingLocation { view, location } => match view {
+                InspectingLocationView::SummaryScreen => {
+                    let ctx = SummaryScreenCtx {
+                        location,
+                        err: &ctx.err,
+                    };
+                    self.summary_screen.update(msg, ctx, db)
+                }
+                _ => vec![],
+            },
         }
     }
-    fn render(&self, frame: &mut Frame, area: Rect, model: &Model) {
-        match model.screen {
-            ScreenType::LocationSelect => self.location_select_screen.render(frame, area, model),
-            ScreenType::Summary => self.summary_screen.render(frame, area, model),
-            _ => (),
+    fn render(&self, frame: &mut Frame, area: Rect, ctx: &Model) {
+        match &ctx.interaction_mode {
+            InteractionMode::BrowsingLocation => {
+                self.location_select_screen.render(frame, area, ctx)
+            }
+            InteractionMode::InspectingLocation { view, location } => match view {
+                InspectingLocationView::SummaryScreen => {
+                    let screen_ctx = SummaryScreenCtx {
+                        location,
+                        err: &ctx.err,
+                    };
+                    self.summary_screen.render(frame, area, screen_ctx)
+                }
+                _ => (),
+            },
         }
     }
 }

@@ -5,8 +5,7 @@ use crate::{
     db::{db_connection::DBConnection, file_db::FileDB},
     domain::location::LocationTag,
     message::Message,
-    model::{Model, ScreenType},
-    screens::summary_screen::SummaryScreen,
+    model::Model,
     update::Update,
 };
 
@@ -25,6 +24,7 @@ impl LocationSelectScreen {
 }
 
 impl Component for LocationSelectScreen {
+    type Ctx<'a> = &'a Model;
     fn update(&mut self, msg: &Message, _model: &Model, db: &FileDB) -> Vec<Update> {
         match msg {
             Message::ListUp => {
@@ -47,10 +47,7 @@ impl Component for LocationSelectScreen {
                 let selected_tag = &self.location_tags[self.idx];
                 let selected_location = db.get_by_id(&selected_tag.id);
                 if let Some(loc) = selected_location {
-                    vec![
-                        Update::SetLocation(loc),
-                        Update::GoToScreen(ScreenType::Summary),
-                    ]
+                    vec![Update::SetLocation(loc)]
                 } else {
                     vec![Update::SetError(
                         "Location not able to be loaded".to_string(),
@@ -61,8 +58,8 @@ impl Component for LocationSelectScreen {
         }
     }
 
-    fn render(&self, frame: &mut Frame, area: Rect, model: &Model) {
-        let err_str = match &model.err {
+    fn render(&self, frame: &mut Frame, area: Rect, ctx: &Model) {
+        let err_str = match &ctx.err {
             Some(err) => format!(" - {}", err),
             _ => String::new(),
         };

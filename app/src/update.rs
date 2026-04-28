@@ -1,8 +1,9 @@
-use crate::{domain::location::Location, model::ScreenType};
+use crate::{domain::location::Location, model::InspectingLocationView};
 
 pub enum Update {
     Quit,
-    GoToScreen(ScreenType),
     SetError(String),
     SetLocation(Location),
+    ClearLocation(),
+    SetInspectingLocationView(InspectingLocationView),
 }
