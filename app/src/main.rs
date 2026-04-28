@@ -1,8 +1,13 @@
-use crate::{event::poll_and_handle_event, message::Message};
+use crate::{
+    event::poll_and_handle_event,
+    message::Message,
+    model::{Model, ApplicationStatus},
+    update::Update,
+};
 
-mod appstate;
 mod event;
 mod message;
+mod model;
 mod tui;
 mod update;
 
@@ -10,13 +15,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     tui::install_panic_hook();
     let mut terminal = tui::init_terminal()?;
 
-    let mut running = true;
-    while running {
+    let mut model = Model::new();
+    while model.application_status == ApplicationStatus::Running {
         terminal.draw(|frame| ())?;
         if let Some(msg) = poll_and_handle_event()? {
-            match msg {
-                Message::Quit => running = false,
-                _ => (),
+            let update = match msg {
+                Message::Quit => Some(Update::Quit),
+                _ => None,
+            };
+            if let Some(u) = update {
+                model.apply(u);
             }
         }
     }

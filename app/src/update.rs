@@ -1,7 +1,7 @@
-use crate::appstate::ScreenState;
+use crate::model::ScreenType;
 
 pub enum Update {
     Quit,
-    GoToScreen(ScreenState),
+    GoToScreen(ScreenType),
     SetError(String),
 }
