@@ -35,7 +35,10 @@ impl DictDb {
         let mut loc_data = HashMap::new();
         loc_data.insert("001".to_string(), Point::new(174.763336, -36.848461));
         let mut polygons = HashMap::new();
-        let geojson_str = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/src/db/raw/001.geojson"))?;
+        let geojson_str = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/db/raw/001.geojson"
+        ))?;
         let geojson_fc: geojson::GeoJson = geojson_str.parse::<GeoJson>()?;
         let feature: FeatureCollection = FeatureCollection::try_from(geojson_fc)?;
         let mut auck_polys: Vec<Polygon> = Vec::new();
