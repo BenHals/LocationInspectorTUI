@@ -1,27 +1,42 @@
 use ratatui::{layout::Rect, widgets::Paragraph, Frame};
 
-use crate::{component::Component, message::Message, model::Model, update::Update};
+use crate::{
+    component::Component,
+    db::{db_connection::DBConnection, file_db::FileDB},
+    domain::location::LocationTag,
+    message::Message,
+    model::Model,
+    update::Update,
+};
 
 pub struct LocationSelectScreen {
-    pub key: usize,
+    idx: usize,
+    location_tags: Vec<LocationTag>,
 }
 
 impl LocationSelectScreen {
-    pub fn new() -> Self {
-        Self { key: 0 }
+    pub fn new(db: &FileDB) -> Self {
+        Self {
+            idx: 0,
+            location_tags: db.get_tags(),
+        }
     }
 }
 
 impl Component for LocationSelectScreen {
-    fn update(&mut self, msg: &Message, _model: &Model) -> Vec<Update> {
+    fn update(&mut self, msg: &Message, _model: &Model, db: &FileDB) -> Vec<Update> {
         match msg {
             Message::ListUp => {
-                self.key += 1;
-                vec![]
+                if self.idx < self.location_tags.len() - 1 {
+                    self.idx += 1;
+                    vec![]
+                } else {
+                    vec![Update::SetError("End of locations!".to_string())]
+                }
             }
             Message::ListDown => {
-                if self.key > 0 {
-                    self.key -= 1;
+                if self.idx > 0 {
+                    self.idx -= 1;
                     vec![]
                 } else {
                     vec![Update::SetError("No more keys!".to_string())]
@@ -36,7 +51,10 @@ impl Component for LocationSelectScreen {
             Some(err) => format!(" - {}", err),
             _ => String::new(),
         };
-        let p = Paragraph::new(format!("Key: {}{}", self.key, err_str));
+        let p = Paragraph::new(format!(
+            "Location: {}{}",
+            self.location_tags[self.idx].name, err_str
+        ));
         frame.render_widget(p, area);
     }
 }

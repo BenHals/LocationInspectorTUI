@@ -583,6 +583,8 @@ dependencies = [
  "itertools 0.13.0",
  "proj",
  "ratatui",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

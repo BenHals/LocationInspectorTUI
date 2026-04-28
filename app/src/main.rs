@@ -1,7 +1,13 @@
-use crate::{app::App, event::poll_and_handle_event, model::ApplicationStatus};
+use std::path::Path;
+
+use crate::{
+    app::App, db::file_db::FileDB, event::poll_and_handle_event, model::ApplicationStatus,
+};
 
 mod app;
 mod component;
+mod db;
+mod domain;
 mod event;
 mod message;
 mod model;
@@ -14,7 +20,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     tui::install_panic_hook();
     let mut terminal = tui::init_terminal()?;
 
-    let mut app = App::new();
+    let db_path_str = std::env::var("DB_LOCATIONS_FILE")?;
+    let db = FileDB::new(Path::new(&db_path_str))?;
+    let mut app = App::new(db);
     while app.model.application_status == ApplicationStatus::Running {
         terminal.draw(|frame| app.render(frame))?;
         if let Some(msg) = poll_and_handle_event()? {
