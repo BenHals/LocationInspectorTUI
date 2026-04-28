@@ -10,6 +10,8 @@ pub fn poll_and_handle_event() -> Result<Option<Message>, Box<dyn std::error::Er
             if key.kind == event::KeyEventKind::Press {
                 return Ok(match key.code {
                     KeyCode::Char('q') => Some(Message::Quit),
+                    KeyCode::Up => Some(Message::ListUp),
+                    KeyCode::Down => Some(Message::ListDown),
                     _ => None,
                 });
             }

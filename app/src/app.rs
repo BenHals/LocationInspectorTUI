@@ -11,7 +11,7 @@ impl App {
     pub fn new() -> Self {
         Self {
             model: Model::new(),
-            view: View {},
+            view: View::new(),
         }
     }
 

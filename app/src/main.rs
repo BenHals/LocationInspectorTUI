@@ -5,6 +5,7 @@ mod component;
 mod event;
 mod message;
 mod model;
+mod screens;
 mod tui;
 mod update;
 mod view;

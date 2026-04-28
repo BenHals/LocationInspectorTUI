@@ -8,4 +8,6 @@ pub enum Message {
     ShiftRight,
     ZoomIn,
     ZoomOut,
+    ListUp,
+    ListDown,
 }
