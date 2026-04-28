@@ -1,4 +1,4 @@
-use std::{collections::HashMap, error, path::Path};
+use std::{collections::HashMap, path::Path};
 
 use crate::{
     db::db_connection::DBConnection,
@@ -18,7 +18,7 @@ impl FileDB {
         for l in entries {
             map.insert(l.id.clone(), l);
         }
-        let base_path = path.parent().unwrap().to_str().unwrap().clone();
+        let base_path = path.parent().unwrap().to_str().unwrap();
         Ok(Self {
             base_path: String::from(base_path),
             locations: map,

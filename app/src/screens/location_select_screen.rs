@@ -5,7 +5,8 @@ use crate::{
     db::{db_connection::DBConnection, file_db::FileDB},
     domain::location::LocationTag,
     message::Message,
-    model::Model,
+    model::{Model, ScreenType},
+    screens::summary_screen::SummaryScreen,
     update::Update,
 };
 
@@ -40,6 +41,20 @@ impl Component for LocationSelectScreen {
                     vec![]
                 } else {
                     vec![Update::SetError("No more keys!".to_string())]
+                }
+            }
+            Message::Select => {
+                let selected_tag = &self.location_tags[self.idx];
+                let selected_location = db.get_by_id(&selected_tag.id);
+                if let Some(loc) = selected_location {
+                    vec![
+                        Update::SetLocation(loc),
+                        Update::GoToScreen(ScreenType::Summary),
+                    ]
+                } else {
+                    vec![Update::SetError(
+                        "Location not able to be loaded".to_string(),
+                    )]
                 }
             }
             _ => vec![],

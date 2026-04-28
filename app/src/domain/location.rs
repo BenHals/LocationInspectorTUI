@@ -5,9 +5,9 @@ use geo::{LineString, Polygon};
 use crate::domain::geometry::{Point, WGS84};
 
 pub struct Location {
-    tag: LocationTag,
-    latlng: Point<WGS84>,
-    polygons: Vec<Polygon>,
+    pub tag: LocationTag,
+    pub latlng: Point<WGS84>,
+    pub polygons: Vec<Polygon>,
 }
 
 pub struct LocationTag {
