@@ -1,22 +1,22 @@
-use std::time::Duration;
+use crate::{event::poll_and_handle_event, message::Message};
 
-use crossterm::event::{self, Event};
-
+mod appstate;
+mod event;
+mod message;
 mod tui;
+mod update;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("loctui — fresh build");
     tui::install_panic_hook();
     let mut terminal = tui::init_terminal()?;
 
     let mut running = true;
     while running {
         terminal.draw(|frame| ())?;
-        if event::poll(Duration::from_millis(250))? {
-            if let Event::Key(key) = event::read()? {
-                if key.kind == event::KeyEventKind::Press && key.code == event::KeyCode::Char('q') {
-                    running = false;
-                }
+        if let Some(msg) = poll_and_handle_event()? {
+            match msg {
+                Message::Quit => running = false,
+                _ => (),
             }
         }
     }
