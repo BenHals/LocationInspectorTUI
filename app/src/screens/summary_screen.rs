@@ -5,6 +5,7 @@ use ratatui::{
 };
 
 use crate::{
+    coastlines::coastlines,
     component::Component,
     components::map_view::{MapView, MapViewCtx},
     db::file_db::FileDB,
@@ -24,7 +25,7 @@ pub struct SummaryScreen {
 impl SummaryScreen {
     pub fn new() -> Self {
         Self {
-            map: MapView::new(),
+            map: MapView::new(coastlines()),
         }
     }
 }
@@ -40,8 +41,8 @@ impl Component for SummaryScreen {
         let map_ctx = MapViewCtx {
             center: &ctx.location.latlng,
             polygons: &[],
+            polylines: &[],
             title: "None",
-            draw_world_map: true,
         };
         updates.extend(self.map.update(msg, map_ctx, db));
         updates
@@ -56,8 +57,8 @@ impl Component for SummaryScreen {
         let map_ctx = MapViewCtx {
             center: &ctx.location.latlng,
             polygons: &[],
+            polylines: &[],
             title: "None",
-            draw_world_map: true,
         };
         self.map.render(frame, layout[1], map_ctx);
         let err_str = match &ctx.err {

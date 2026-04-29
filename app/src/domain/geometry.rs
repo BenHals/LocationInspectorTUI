@@ -1,3 +1,4 @@
+use geo::LineString as GeoLineString;
 use geo::Polygon as GeoPolygon;
 use std::marker::PhantomData;
 
@@ -43,6 +44,20 @@ pub struct Polygon<P: Projection> {
 
 impl<P: Projection> Polygon<P> {
     pub fn new(inner: GeoPolygon) -> Self {
+        Self {
+            inner,
+            _proj: PhantomData,
+        }
+    }
+}
+
+pub struct Polyline<P: Projection> {
+    pub inner: GeoLineString,
+    _proj: PhantomData<P>,
+}
+
+impl<P: Projection> Polyline<P> {
+    pub fn new(inner: GeoLineString) -> Self {
         Self {
             inner,
             _proj: PhantomData,

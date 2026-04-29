@@ -5,6 +5,7 @@ use crate::{
 };
 
 mod app;
+mod coastlines;
 mod component;
 mod components;
 mod db;

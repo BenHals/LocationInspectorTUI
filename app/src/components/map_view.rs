@@ -1,3 +1,4 @@
+use geo::Coord;
 use itertools::Itertools;
 use ratatui::style::Stylize;
 use std::marker::PhantomData;
@@ -6,37 +7,39 @@ use ratatui::{
     style::{Color, Style},
     text::Span,
     widgets::{
-        canvas::{Canvas, Line, Map, MapResolution},
+        canvas::{Canvas, Line},
         Block, Borders,
     },
 };
 
 use crate::{
     component::Component,
-    domain::geometry::{Point, Polygon, Projection},
+    domain::geometry::{Point, Polygon, Polyline, Projection},
     message::Message,
 };
 
-pub struct MapView<P: Projection> {
+pub struct MapView<P: Projection + 'static> {
     pub offset_x: f64,
     pub offset_y: f64,
     pub scale: f64,
+    pub background: &'static [Polyline<P>],
     _proj: PhantomData<P>,
 }
 
 pub struct MapViewCtx<'a, P: Projection> {
     pub center: &'a Point<P>,
     pub polygons: &'a [Polygon<P>],
+    pub polylines: &'a [Polyline<P>],
     pub title: &'a str,
-    pub draw_world_map: bool,
 }
 
-impl<P: Projection> MapView<P> {
-    pub fn new() -> Self {
+impl<P: Projection + 'static> MapView<P> {
+    pub fn new(background: &'static [Polyline<P>]) -> Self {
         Self {
             offset_x: 0.0,
             offset_y: 0.0,
             scale: 1.0,
+            background,
             _proj: PhantomData,
         }
     }
@@ -48,8 +51,8 @@ impl<P: Projection + 'static> Component for MapView<P> {
     fn update<'a>(
         &mut self,
         msg: &crate::message::Message,
-        ctx: Self::Ctx<'a>,
-        db: &crate::db::file_db::FileDB,
+        _ctx: Self::Ctx<'a>,
+        _db: &crate::db::file_db::FileDB,
     ) -> Vec<crate::update::Update> {
         match msg {
             Message::ShiftUp => self.offset_y += self.scale,
@@ -81,22 +84,25 @@ impl<P: Projection + 'static> Component for MapView<P> {
             .x_bounds(x_bounds)
             .y_bounds(y_bounds)
             .paint(|c| {
-                if ctx.draw_world_map {
-                    c.draw(&Map {
-                        color: Color::Green,
-                        resolution: MapResolution::High,
-                    });
-                }
-
                 for poly in ctx.polygons {
                     for (a, b) in poly.inner.exterior().coords().tuple_windows() {
-                        c.draw(&Line {
-                            x1: a.x,
-                            y1: a.y,
-                            x2: b.x,
-                            y2: b.y,
-                            color: Color::Red,
-                        });
+                        if let Some([x1, y1, x2, y2]) = clip_line(a, b, x_bounds, y_bounds) {
+                            c.draw(&Line { x1, y1, x2, y2, color: Color::Red });
+                        }
+                    }
+                }
+                for line in ctx.polylines {
+                    for (a, b) in line.inner.coords().tuple_windows() {
+                        if let Some([x1, y1, x2, y2]) = clip_line(a, b, x_bounds, y_bounds) {
+                            c.draw(&Line { x1, y1, x2, y2, color: Color::Red });
+                        }
+                    }
+                }
+                for line in self.background {
+                    for (a, b) in line.inner.coords().tuple_windows() {
+                        if let Some([x1, y1, x2, y2]) = clip_line(a, b, x_bounds, y_bounds) {
+                            c.draw(&Line { x1, y1, x2, y2, color: Color::Green });
+                        }
                     }
                 }
 
@@ -109,4 +115,47 @@ impl<P: Projection + 'static> Component for MapView<P> {
 
         frame.render_widget(canvas, area);
     }
+}
+
+/// Clip a line segment from `a` to `b` to the rectangle `[x_bounds] × [y_bounds]`
+/// using the Liang-Barsky algorithm. Returns `None` if the segment is entirely outside.
+fn clip_line(a: &Coord, b: &Coord, x_bounds: [f64; 2], y_bounds: [f64; 2]) -> Option<[f64; 4]> {
+    let dx = b.x - a.x;
+    let dy = b.y - a.y;
+
+    let mut t0 = 0.0_f64;
+    let mut t1 = 1.0_f64;
+
+    let p_q = [
+        (-dx, a.x - x_bounds[0]),     // left
+        ( dx, x_bounds[1] - a.x),     // right
+        (-dy, a.y - y_bounds[0]),     // bottom
+        ( dy, y_bounds[1] - a.y),     // top
+    ];
+
+    for (p, q) in p_q {
+        if p == 0.0 {
+            // line is parallel to this boundary
+            if q < 0.0 {
+                return None;          // and entirely outside
+            }
+            // else: no constraint from this boundary
+        } else {
+            let t = q / p;
+            if p < 0.0 {
+                // line is entering this slab
+                if t > t1 { return None; }
+                if t > t0 { t0 = t; }
+            } else {
+                // line is exiting this slab
+                if t < t0 { return None; }
+                if t < t1 { t1 = t; }
+            }
+        }
+    }
+
+    Some([
+        a.x + t0 * dx, a.y + t0 * dy,
+        a.x + t1 * dx, a.y + t1 * dy,
+    ])
 }
