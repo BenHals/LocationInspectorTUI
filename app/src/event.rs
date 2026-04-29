@@ -14,6 +14,12 @@ pub fn poll_and_handle_event() -> Result<Option<Message>, Box<dyn std::error::Er
                     KeyCode::Down => Some(Message::ListDown),
                     KeyCode::Enter => Some(Message::Select),
                     KeyCode::Esc => Some(Message::Back),
+                    KeyCode::Char('w') => Some(Message::ShiftUp),
+                    KeyCode::Char('s') => Some(Message::ShiftDown),
+                    KeyCode::Char('a') => Some(Message::ShiftLeft),
+                    KeyCode::Char('d') => Some(Message::ShiftRight),
+                    KeyCode::Char('+') => Some(Message::ZoomIn),
+                    KeyCode::Char('-') => Some(Message::ZoomOut),
                     _ => None,
                 });
             }

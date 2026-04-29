@@ -6,6 +6,7 @@ use crate::{
 
 mod app;
 mod component;
+mod components;
 mod db;
 mod domain;
 mod event;
