@@ -37,7 +37,7 @@ impl Model {
         match update {
             Update::Quit => self.application_status = ApplicationStatus::Done,
             Update::SetError(err) => self.err = Some(err),
-            Update::ClearLocation() => self.interaction_mode = InteractionMode::BrowsingLocation,
+            Update::ClearLocation => self.interaction_mode = InteractionMode::BrowsingLocation,
             Update::SetLocation(location) => {
                 self.interaction_mode = InteractionMode::InspectingLocation {
                     location,

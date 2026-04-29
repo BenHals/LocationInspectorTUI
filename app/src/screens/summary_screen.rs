@@ -1,4 +1,8 @@
-use ratatui::{layout::Rect, widgets::Paragraph, Frame};
+use ratatui::{
+    layout::{Constraint, Direction, Layout, Rect},
+    widgets::Paragraph,
+    Frame,
+};
 
 use crate::{
     component::Component, db::file_db::FileDB, domain::location::Location, message::Message,
@@ -21,6 +25,7 @@ impl Component for SummaryScreen {
     type Ctx<'a> = SummaryScreenCtx<'a>;
     fn update(&mut self, msg: &Message, _ctx: SummaryScreenCtx, _db: &FileDB) -> Vec<Update> {
         match msg {
+            Message::Back => vec![Update::ClearLocation],
             _ => vec![],
         }
     }

@@ -4,6 +4,6 @@ pub enum Update {
     Quit,
     SetError(String),
     SetLocation(Location),
-    ClearLocation(),
+    ClearLocation,
     SetInspectingLocationView(InspectingLocationView),
 }

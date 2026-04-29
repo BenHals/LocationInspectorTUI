@@ -13,6 +13,7 @@ pub fn poll_and_handle_event() -> Result<Option<Message>, Box<dyn std::error::Er
                     KeyCode::Up => Some(Message::ListUp),
                     KeyCode::Down => Some(Message::ListDown),
                     KeyCode::Enter => Some(Message::Select),
+                    KeyCode::Esc => Some(Message::Back),
                     _ => None,
                 });
             }

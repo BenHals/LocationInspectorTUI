@@ -1,4 +1,9 @@
-use ratatui::{layout::Rect, widgets::Paragraph, Frame};
+use ratatui::{
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Modifier, Style},
+    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
+    Frame,
+};
 
 use crate::{
     component::Component,
@@ -27,20 +32,20 @@ impl Component for LocationSelectScreen {
     type Ctx<'a> = &'a Model;
     fn update(&mut self, msg: &Message, _model: &Model, db: &FileDB) -> Vec<Update> {
         match msg {
-            Message::ListUp => {
+            Message::ListDown => {
                 if self.idx < self.location_tags.len() - 1 {
                     self.idx += 1;
                     vec![]
                 } else {
-                    vec![Update::SetError("End of locations!".to_string())]
+                    vec![]
                 }
             }
-            Message::ListDown => {
+            Message::ListUp => {
                 if self.idx > 0 {
                     self.idx -= 1;
                     vec![]
                 } else {
-                    vec![Update::SetError("No more keys!".to_string())]
+                    vec![]
                 }
             }
             Message::Select => {
@@ -59,6 +64,23 @@ impl Component for LocationSelectScreen {
     }
 
     fn render(&self, frame: &mut Frame, area: Rect, ctx: &Model) {
+        let layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Min(1), Constraint::Length(1)])
+            .split(area);
+        let items: Vec<ListItem> = self
+            .location_tags
+            .iter()
+            .map(|l| ListItem::new(format!("{} - {}", l.id, l.name)))
+            .collect();
+        let list = List::new(items)
+            .block(Block::default().borders(Borders::all()).title("Locations"))
+            .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
+            .highlight_symbol("▶ ");
+        let mut list_state = ListState::default();
+        list_state.select(Some(self.idx));
+        frame.render_stateful_widget(list, layout[0], &mut list_state);
+
         let err_str = match &ctx.err {
             Some(err) => format!(" - {}", err),
             _ => String::new(),
@@ -67,6 +89,6 @@ impl Component for LocationSelectScreen {
             "Location: {}{}",
             self.location_tags[self.idx].name, err_str
         ));
-        frame.render_widget(p, area);
+        frame.render_widget(p, layout[1]);
     }
 }

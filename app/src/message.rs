@@ -1,6 +1,7 @@
 pub enum Message {
     Quit,
     Select,
+    Back,
     Tab,
     ShiftUp,
     ShiftDown,
