@@ -1,13 +1,15 @@
 use std::path::Path;
 
-use geo::{LineString, Polygon};
+use geo::{Centroid, LineString};
+use geo::Polygon as GeoPolygon;
 
-use crate::domain::geometry::{Point, WGS84};
+use crate::domain::geometry::{Local, Point, Polygon, WGS84};
 
 pub struct Location {
     pub tag: LocationTag,
     pub latlng: Point<WGS84>,
-    pub polygons: Vec<Polygon>,
+    pub polygons: Vec<Polygon<Local>>,
+    pub local_center: Point<Local>,
 }
 
 pub struct LocationTag {
@@ -29,14 +31,20 @@ impl LocationFile {
         let polygon_path = base_path.join(self.polygon_path.clone());
         let raw_polygons = std::fs::read_to_string(polygon_path).ok()?;
         let rings: Vec<Vec<[f64; 2]>> = serde_json::from_str(&raw_polygons).ok()?;
-        let polygons = rings
+        let polygons: Vec<Polygon<Local>> = rings
             .into_iter()
             .map(|ring| {
                 let exterior =
                     LineString::from(ring.into_iter().map(|p| (p[0], p[1])).collect::<Vec<_>>());
-                Polygon::new(exterior, vec![])
+                Polygon::new(GeoPolygon::new(exterior, vec![]))
             })
             .collect();
+        let (sx, sy, n) = polygons.iter().filter_map(|p| p.inner.centroid()).fold((0.0, 0.0, 0_usize), |(sx, sy, n), c| {(sx + c.x(), sy + c.y(), n + 1)});
+        let local_center = if n > 0 {
+            Point::<Local>::new(sx / n as f64, sy / n as f64)
+        } else {
+            Point::<Local>::new(0.0, 0.0)
+        };
         Some(Location {
             tag: LocationTag {
                 id: self.id.clone(),
@@ -44,6 +52,7 @@ impl LocationFile {
             },
             latlng,
             polygons,
+            local_center,
         })
     }
     pub fn into_location_tag(self) -> LocationTag {

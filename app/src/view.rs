@@ -6,8 +6,7 @@ use crate::{
     message::Message,
     model::{InspectingLocationView, InteractionMode, Model},
     screens::{
-        location_select_screen::LocationSelectScreen,
-        summary_screen::{SummaryScreen, SummaryScreenCtx},
+        inspect_screen::{InspectScreen, InspectScreenCtx}, location_select_screen::LocationSelectScreen, summary_screen::{SummaryScreen, SummaryScreenCtx}
     },
     update::Update,
 };
@@ -15,6 +14,7 @@ use crate::{
 pub struct View {
     pub location_select_screen: LocationSelectScreen,
     pub summary_screen: SummaryScreen,
+    pub inspect_screen: InspectScreen,
 }
 
 impl View {
@@ -22,6 +22,7 @@ impl View {
         Self {
             location_select_screen: LocationSelectScreen::new(db),
             summary_screen: SummaryScreen::new(),
+            inspect_screen: InspectScreen::new(),
         }
     }
 }
@@ -42,6 +43,13 @@ impl Component for View {
                         err: &ctx.err,
                     };
                     self.summary_screen.update(msg, ctx, db)
+                },
+                InspectingLocationView::InspectScreen => {
+                    let ctx = InspectScreenCtx {
+                        location,
+                        err: &ctx.err,
+                    };
+                    self.inspect_screen.update(msg, ctx, db)
                 }
                 _ => vec![],
             },
@@ -59,6 +67,13 @@ impl Component for View {
                         err: &ctx.err,
                     };
                     self.summary_screen.render(frame, area, screen_ctx)
+                },
+                InspectingLocationView::InspectScreen => {
+                    let screen_ctx = InspectScreenCtx {
+                        location,
+                        err: &ctx.err,
+                    };
+                    self.inspect_screen.render(frame, area, screen_ctx)
                 }
                 _ => (),
             },

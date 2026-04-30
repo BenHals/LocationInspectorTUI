@@ -5,37 +5,37 @@ use ratatui::{
 };
 
 use crate::{
-    coastlines::coastlines, component::Component, components::map_view::{MapView, MapViewCtx}, db::file_db::FileDB, domain::{geometry::WGS84, location::Location}, message::Message, model::InspectingLocationView, update::Update
+    component::Component, components::map_view::{MapView, MapViewCtx}, db::file_db::FileDB, domain::{geometry::Local, location::Location}, message::Message, model::InspectingLocationView, update::Update
 };
 
-pub struct SummaryScreenCtx<'a> {
+pub struct InspectScreenCtx<'a> {
     pub location: &'a Location,
     pub err: &'a Option<String>,
 }
-pub struct SummaryScreen {
-    pub map: MapView<WGS84>,
+pub struct InspectScreen {
+    pub map: MapView<Local>,
 }
 
-impl SummaryScreen {
+impl InspectScreen {
     pub fn new() -> Self {
         Self {
-            map: MapView::new(coastlines(), Some(0.1)),
+            map: MapView::new(&[], Some(0.1)),
         }
     }
 }
 
-impl Component for SummaryScreen {
-    type Ctx<'a> = SummaryScreenCtx<'a>;
-    fn update(&mut self, msg: &Message, ctx: SummaryScreenCtx, db: &FileDB) -> Vec<Update> {
+impl Component for InspectScreen {
+    type Ctx<'a> = InspectScreenCtx<'a>;
+    fn update(&mut self, msg: &Message, ctx: InspectScreenCtx, db: &FileDB) -> Vec<Update> {
         match msg {
             Message::Back => return vec![Update::ClearLocation],
-            Message::Tab => return vec![Update::SetInspectingLocationView(InspectingLocationView::InspectScreen)],
+            Message::Tab => return vec![Update::SetInspectingLocationView(InspectingLocationView::SummaryScreen)],
             _ => (),
         }
         let mut updates: Vec<Update> = vec![];
         let map_ctx = MapViewCtx {
-            center: &ctx.location.latlng,
-            polygons: &[],
+            center: &ctx.location.local_center,
+            polygons: &ctx.location.polygons,
             polylines: &[],
             title: "None",
         };
@@ -43,15 +43,15 @@ impl Component for SummaryScreen {
         updates
     }
 
-    fn render<'a>(&self, frame: &mut Frame, area: Rect, ctx: SummaryScreenCtx<'a>) {
+    fn render<'a>(&self, frame: &mut Frame, area: Rect, ctx: InspectScreenCtx<'a>) {
         let layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Min(20), Constraint::Min(10)])
             .split(area);
 
         let map_ctx = MapViewCtx {
-            center: &ctx.location.latlng,
-            polygons: &[],
+            center: &ctx.location.local_center,
+            polygons: &ctx.location.polygons,
             polylines: &[],
             title: "None",
         };
@@ -61,7 +61,7 @@ impl Component for SummaryScreen {
             _ => String::new(),
         };
         let summary_string = format!("Location name {}", ctx.location.tag.name);
-        let p = Paragraph::new(format!("Summary for: {}{}", summary_string, err_str));
+        let p = Paragraph::new(format!("Inspecting: {}{}", summary_string, err_str));
         frame.render_widget(p, layout[0]);
     }
 }

@@ -34,11 +34,11 @@ pub struct MapViewCtx<'a, P: Projection> {
 }
 
 impl<P: Projection + 'static> MapView<P> {
-    pub fn new(background: &'static [Polyline<P>]) -> Self {
+    pub fn new(background: &'static [Polyline<P>], scale: Option<f64>) -> Self {
         Self {
             offset_x: 0.0,
             offset_y: 0.0,
-            scale: 1.0,
+            scale: scale.unwrap_or(1.0),
             background,
             _proj: PhantomData,
         }
@@ -55,10 +55,10 @@ impl<P: Projection + 'static> Component for MapView<P> {
         _db: &crate::db::file_db::FileDB,
     ) -> Vec<crate::update::Update> {
         match msg {
-            Message::ShiftUp => self.offset_y += self.scale,
-            Message::ShiftDown => self.offset_y -= self.scale,
-            Message::ShiftLeft => self.offset_x -= self.scale,
-            Message::ShiftRight => self.offset_x += self.scale,
+            Message::ShiftUp => self.offset_y += 4.0*self.scale,
+            Message::ShiftDown => self.offset_y -= 4.0*self.scale,
+            Message::ShiftLeft => self.offset_x -= 4.0*self.scale,
+            Message::ShiftRight => self.offset_x += 4.0*self.scale,
             Message::ZoomIn => self.scale *= 0.9,
             Message::ZoomOut => self.scale *= 1.1,
             _ => (),
