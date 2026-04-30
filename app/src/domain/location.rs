@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use geo::{Centroid, LineString};
+use geo::LineString;
 use geo::Polygon as GeoPolygon;
 
 use crate::domain::geometry::{Local, Point, Polygon, WGS84};
@@ -9,7 +9,6 @@ pub struct Location {
     pub tag: LocationTag,
     pub latlng: Point<WGS84>,
     pub polygons: Vec<Polygon<Local>>,
-    pub local_center: Point<Local>,
 }
 
 pub struct LocationTag {
@@ -39,12 +38,6 @@ impl LocationFile {
                 Polygon::new(GeoPolygon::new(exterior, vec![]))
             })
             .collect();
-        let (sx, sy, n) = polygons.iter().filter_map(|p| p.inner.centroid()).fold((0.0, 0.0, 0_usize), |(sx, sy, n), c| {(sx + c.x(), sy + c.y(), n + 1)});
-        let local_center = if n > 0 {
-            Point::<Local>::new(sx / n as f64, sy / n as f64)
-        } else {
-            Point::<Local>::new(0.0, 0.0)
-        };
         Some(Location {
             tag: LocationTag {
                 id: self.id.clone(),
@@ -52,14 +45,7 @@ impl LocationFile {
             },
             latlng,
             polygons,
-            local_center,
         })
-    }
-    pub fn into_location_tag(self) -> LocationTag {
-        LocationTag {
-            id: self.id,
-            name: self.name,
-        }
     }
     pub fn get_location_tag(&self) -> LocationTag {
         LocationTag {

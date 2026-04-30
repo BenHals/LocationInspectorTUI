@@ -5,8 +5,10 @@ use ratatui::{
 };
 
 use crate::{
-    component::Component, components::map_view::{MapView, MapViewCtx}, db::file_db::FileDB, domain::{geometry::Local, location::Location}, message::Message, model::InspectingLocationView, update::Update
+    component::Component, components::map_view::{MapView, MapViewCtx}, db::file_db::FileDB, domain::{geometry::{Local, Point}, location::Location}, message::Message, model::InspectingLocationView, update::Update
 };
+
+const ORIGIN: Point<Local> = Point::new(0.0, 0.0);
 
 pub struct InspectScreenCtx<'a> {
     pub location: &'a Location,
@@ -34,10 +36,10 @@ impl Component for InspectScreen {
         }
         let mut updates: Vec<Update> = vec![];
         let map_ctx = MapViewCtx {
-            center: &ctx.location.local_center,
+            center: &ORIGIN,
             polygons: &ctx.location.polygons,
             polylines: &[],
-            title: "None",
+            title: &ctx.location.tag.name,
         };
         updates.extend(self.map.update(msg, map_ctx, db));
         updates
@@ -50,10 +52,10 @@ impl Component for InspectScreen {
             .split(area);
 
         let map_ctx = MapViewCtx {
-            center: &ctx.location.local_center,
+            center: &ORIGIN,
             polygons: &ctx.location.polygons,
             polylines: &[],
-            title: "None",
+            title: &ctx.location.tag.name,
         };
         self.map.render(frame, layout[1], map_ctx);
         let err_str = match &ctx.err {

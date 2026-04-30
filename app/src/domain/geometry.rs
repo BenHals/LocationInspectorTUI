@@ -28,7 +28,7 @@ pub struct Point<P: Projection> {
 }
 
 impl<P: Projection> Point<P> {
-    pub fn new(x: f64, y: f64) -> Self {
+    pub const fn new(x: f64, y: f64) -> Self {
         Self {
             x,
             y,
