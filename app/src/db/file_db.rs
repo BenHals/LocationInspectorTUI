@@ -12,8 +12,8 @@ pub struct FileDB {
 
 impl FileDB {
     pub fn new(path: &Path) -> Result<Self, Box<dyn std::error::Error>> {
-        let raw = std::fs::read_to_string(path)?;
-        let entries: Vec<LocationFile> = serde_json::from_str(&raw)?;
+        let mut bytes = std::fs::read(path)?;
+        let entries: Vec<LocationFile> = simd_json::serde::from_slice(&mut bytes)?;
         let mut map = HashMap::new();
         for l in entries {
             map.insert(l.id.clone(), l);

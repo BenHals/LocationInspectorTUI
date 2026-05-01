@@ -11,4 +11,6 @@ pub enum Message {
     ZoomOut,
     ListUp,
     ListDown,
+    /// Synthetic — dispatched to a screen when it becomes active.
+    Activated,
 }

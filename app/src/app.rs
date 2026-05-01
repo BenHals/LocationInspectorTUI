@@ -21,9 +21,13 @@ impl App {
 
     pub fn handle(&mut self, msg: Message) {
         self.model.err = None;
-        let updates = self.view.update(&msg, &self.model, &self.db);
-        for u in updates {
-            self.model.apply(u);
+        let mut queue: Vec<Message> = vec![msg];
+        while let Some(m) = queue.pop() {
+            let (updates, follow_ups) = self.view.update(&m, &self.model, &self.db);
+            for u in updates {
+                self.model.apply(u);
+            }
+            queue.extend(follow_ups);
         }
     }
 

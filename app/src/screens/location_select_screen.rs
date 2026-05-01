@@ -30,36 +30,33 @@ impl LocationSelectScreen {
 
 impl Component for LocationSelectScreen {
     type Ctx<'a> = &'a Model;
-    fn update(&mut self, msg: &Message, _model: &Model, db: &FileDB) -> Vec<Update> {
+    fn update(&mut self, msg: &Message, _model: &Model, db: &FileDB) -> (Vec<Update>, Vec<Message>) {
         match msg {
             Message::ListDown => {
-                if self.idx < self.location_tags.len() - 1 {
+                if self.idx < self.location_tags.len().saturating_sub(1) {
                     self.idx += 1;
-                    vec![]
-                } else {
-                    vec![]
                 }
+                (vec![], vec![])
             }
             Message::ListUp => {
                 if self.idx > 0 {
                     self.idx -= 1;
-                    vec![]
-                } else {
-                    vec![]
                 }
+                (vec![], vec![])
             }
             Message::Select => {
                 let selected_tag = &self.location_tags[self.idx];
                 let selected_location = db.get_by_id(&selected_tag.id);
                 if let Some(loc) = selected_location {
-                    vec![Update::SetLocation(loc)]
+                    (vec![Update::SetLocation(loc)], vec![])
                 } else {
-                    vec![Update::SetError(
-                        "Location not able to be loaded".to_string(),
-                    )]
+                    (
+                        vec![Update::SetError("Location not able to be loaded".to_string())],
+                        vec![],
+                    )
                 }
             }
-            _ => vec![],
+            _ => (vec![], vec![]),
         }
     }
 

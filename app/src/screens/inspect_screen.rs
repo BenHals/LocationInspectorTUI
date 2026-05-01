@@ -21,28 +21,33 @@ pub struct InspectScreen {
 impl InspectScreen {
     pub fn new() -> Self {
         Self {
-            map: MapView::new(&[], Some(0.1)),
+            map: MapView::new(&[], Some(0.1), false),
         }
     }
 }
 
 impl Component for InspectScreen {
     type Ctx<'a> = InspectScreenCtx<'a>;
-    fn update(&mut self, msg: &Message, ctx: InspectScreenCtx, db: &FileDB) -> Vec<Update> {
+    fn update(&mut self, msg: &Message, ctx: InspectScreenCtx, db: &FileDB) -> (Vec<Update>, Vec<Message>) {
         match msg {
-            Message::Back => return vec![Update::ClearLocation],
-            Message::Tab => return vec![Update::SetInspectingLocationView(InspectingLocationView::SummaryScreen)],
+            Message::Back => return (vec![Update::ClearLocation], vec![]),
+            Message::Tab => return (
+                vec![Update::SetInspectingLocationView(InspectingLocationView::SummaryScreen)],
+                vec![Message::Activated],
+            ),
+            Message::Activated => {
+                self.map.fit_polygons(&ctx.location.polygons);
+                return (vec![], vec![]);
+            }
             _ => (),
         }
-        let mut updates: Vec<Update> = vec![];
         let map_ctx = MapViewCtx {
             center: &ORIGIN,
             polygons: &ctx.location.polygons,
             polylines: &[],
             title: &ctx.location.tag.name,
         };
-        updates.extend(self.map.update(msg, map_ctx, db));
-        updates
+        self.map.update(msg, map_ctx, db)
     }
 
     fn render<'a>(&self, frame: &mut Frame, area: Rect, ctx: InspectScreenCtx<'a>) {

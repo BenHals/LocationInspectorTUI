@@ -23,6 +23,7 @@ pub struct MapView<P: Projection + 'static> {
     pub offset_y: f64,
     pub scale: f64,
     pub background: &'static [Polyline<P>],
+    pub show_location: bool,
     _proj: PhantomData<P>,
 }
 
@@ -34,14 +35,29 @@ pub struct MapViewCtx<'a, P: Projection> {
 }
 
 impl<P: Projection + 'static> MapView<P> {
-    pub fn new(background: &'static [Polyline<P>], scale: Option<f64>) -> Self {
+    pub fn new(background: &'static [Polyline<P>], scale: Option<f64>, show_location: bool) -> Self {
         Self {
             offset_x: 0.0,
             offset_y: 0.0,
             scale: scale.unwrap_or(1.0),
             background,
+            show_location,
             _proj: PhantomData,
         }
+    }
+
+    /// Reset offsets to origin and set scale so the given polygons fit the viewport
+    /// with a small margin. Polygons are assumed to be in this MapView's projection.
+    pub fn fit_polygons(&mut self, polygons: &[Polygon<P>]) {
+        let half_extent = polygons.iter()
+            .flat_map(|p| p.inner.exterior().coords())
+            .fold(0.0_f64, |acc, c| acc.max(c.x.abs()).max(c.y.abs()));
+
+        const ASSUMED_HALF_CELLS: f64 = 80.0;
+        const PADDING: f64 = 1.2;
+        self.scale = half_extent * PADDING / (ASSUMED_HALF_CELLS * P::UNITS_PER_CELL_X);
+        self.offset_x = 0.0;
+        self.offset_y = 0.0;
     }
 }
 
@@ -53,17 +69,24 @@ impl<P: Projection + 'static> Component for MapView<P> {
         msg: &crate::message::Message,
         _ctx: Self::Ctx<'a>,
         _db: &crate::db::file_db::FileDB,
-    ) -> Vec<crate::update::Update> {
+    ) -> (Vec<crate::update::Update>, Vec<Message>) {
+        // pan: N screen-cells per press, projection-aware
+        const PAN_CELLS: f64 = 5.0;
+        let pan_x = PAN_CELLS * P::UNITS_PER_CELL_X * self.scale;
+        let pan_y = PAN_CELLS * P::UNITS_PER_CELL_Y * self.scale;
+        // zoom: symmetric multiplicative factor (in-then-out returns to start)
+        const ZOOM_FACTOR: f64 = 1.0 / 0.9;
+
         match msg {
-            Message::ShiftUp => self.offset_y += 4.0*self.scale,
-            Message::ShiftDown => self.offset_y -= 4.0*self.scale,
-            Message::ShiftLeft => self.offset_x -= 4.0*self.scale,
-            Message::ShiftRight => self.offset_x += 4.0*self.scale,
-            Message::ZoomIn => self.scale *= 0.9,
-            Message::ZoomOut => self.scale *= 1.1,
+            Message::ShiftUp    => self.offset_y += pan_y,
+            Message::ShiftDown  => self.offset_y -= pan_y,
+            Message::ShiftLeft  => self.offset_x -= pan_x,
+            Message::ShiftRight => self.offset_x += pan_x,
+            Message::ZoomIn     => self.scale /= ZOOM_FACTOR,
+            Message::ZoomOut    => self.scale *= ZOOM_FACTOR,
             _ => (),
         };
-        vec![]
+        (vec![], vec![])
     }
 
     fn render<'a>(
@@ -106,11 +129,13 @@ impl<P: Projection + 'static> Component for MapView<P> {
                     }
                 }
 
-                c.print(
-                    ctx.center.x,
-                    ctx.center.y,
-                    Span::styled("X", Style::new().red().bold()),
-                );
+                if self.show_location {
+                    c.print(
+                        ctx.center.x,
+                        ctx.center.y,
+                        Span::styled("X", Style::new().red().bold()),
+                    );
+                }
             });
 
         frame.render_widget(canvas, area);

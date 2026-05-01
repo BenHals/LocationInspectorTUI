@@ -19,28 +19,29 @@ pub struct SummaryScreen {
 impl SummaryScreen {
     pub fn new() -> Self {
         Self {
-            map: MapView::new(coastlines(), Some(0.1)),
+            map: MapView::new(coastlines(), Some(0.1), true),
         }
     }
 }
 
 impl Component for SummaryScreen {
     type Ctx<'a> = SummaryScreenCtx<'a>;
-    fn update(&mut self, msg: &Message, ctx: SummaryScreenCtx, db: &FileDB) -> Vec<Update> {
+    fn update(&mut self, msg: &Message, ctx: SummaryScreenCtx, db: &FileDB) -> (Vec<Update>, Vec<Message>) {
         match msg {
-            Message::Back => return vec![Update::ClearLocation],
-            Message::Tab => return vec![Update::SetInspectingLocationView(InspectingLocationView::InspectScreen)],
+            Message::Back => return (vec![Update::ClearLocation], vec![]),
+            Message::Tab => return (
+                vec![Update::SetInspectingLocationView(InspectingLocationView::InspectScreen)],
+                vec![Message::Activated],
+            ),
             _ => (),
         }
-        let mut updates: Vec<Update> = vec![];
         let map_ctx = MapViewCtx {
             center: &ctx.location.latlng,
             polygons: &[],
             polylines: &[],
-            title: "None",
+            title: &ctx.location.tag.name,
         };
-        updates.extend(self.map.update(msg, map_ctx, db));
-        updates
+        self.map.update(msg, map_ctx, db)
     }
 
     fn render<'a>(&self, frame: &mut Frame, area: Rect, ctx: SummaryScreenCtx<'a>) {

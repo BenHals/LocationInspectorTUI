@@ -29,9 +29,9 @@ impl View {
 
 impl Component for View {
     type Ctx<'a> = &'a Model;
-    fn update(&mut self, msg: &Message, ctx: &Model, db: &FileDB) -> Vec<Update> {
+    fn update(&mut self, msg: &Message, ctx: &Model, db: &FileDB) -> (Vec<Update>, Vec<Message>) {
         match msg {
-            Message::Quit => return vec![Update::Quit],
+            Message::Quit => return (vec![Update::Quit], vec![]),
             _ => {}
         }
         match &ctx.interaction_mode {
@@ -51,7 +51,6 @@ impl Component for View {
                     };
                     self.inspect_screen.update(msg, ctx, db)
                 }
-                _ => vec![],
             },
         }
     }
@@ -67,7 +66,7 @@ impl Component for View {
                         err: &ctx.err,
                     };
                     self.summary_screen.render(frame, area, screen_ctx)
-                },
+                }
                 InspectingLocationView::InspectScreen => {
                     let screen_ctx = InspectScreenCtx {
                         location,
@@ -75,7 +74,6 @@ impl Component for View {
                     };
                     self.inspect_screen.render(frame, area, screen_ctx)
                 }
-                _ => (),
             },
         }
     }
