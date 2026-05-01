@@ -41,9 +41,14 @@ impl LocationSelectScreen {
     }
 
     fn move_down(&mut self) {
-        if self.idx < self.location_tags.len().saturating_sub(1) {
+        if self.idx < self.matches.len().saturating_sub(1) {
             self.idx += 1;
         }
+    }
+
+    fn refresh_matches(&mut self) {
+        self.matches = recompute_matches(&self.query, &self.location_tags, &self.matcher);
+        self.idx = 0;
     }
 
     fn select(&mut self, db: &FileDB) -> (Vec<Update>, Vec<Message>) {
@@ -53,18 +58,23 @@ impl LocationSelectScreen {
             .map(|&i| &self.location_tags[i])
             .collect();
 
-        let selected_tag = &items[self.idx];
-        match db.get_by_id(&selected_tag.id) {
-            Some(loc) => {
-                self.query = None;
-                (vec![Update::SetLocation(loc)], vec![])
+        let selected_item = items.get(self.idx);
+        if let Some(selected_tag) = selected_item {
+            match db.get_by_id(&selected_tag.id) {
+                Some(loc) => {
+                    self.query = None;
+                    self.matches = (0..self.location_tags.len()).collect();
+                    (vec![Update::SetLocation(loc)], vec![])
+                }
+                None => (
+                    vec![Update::SetError(
+                        "Location not able to be loaded".to_string(),
+                    )],
+                    vec![],
+                ),
             }
-            None => (
-                vec![Update::SetError(
-                    "Location not able to be loaded".to_string(),
-                )],
-                vec![],
-            ),
+        } else {
+            (vec![], vec![])
         }
     }
 }
@@ -83,35 +93,20 @@ impl Component for LocationSelectScreen {
             match msg {
                 Message::Char(c) => {
                     query.push(*c);
-                    if let Some(matches) =
-                        recompute_matches(&self.query, &self.location_tags, &self.matcher)
-                    {
-                        self.matches = matches;
-                    }
+                    self.refresh_matches();
                 }
                 Message::Backspace => {
                     query.pop();
-                    if let Some(matches) =
-                        recompute_matches(&self.query, &self.location_tags, &self.matcher)
-                    {
-                        self.matches = matches;
-                    }
+                    self.refresh_matches();
                 }
                 Message::Esc => {
                     self.query = None;
-                    if let Some(matches) =
-                        recompute_matches(&self.query, &self.location_tags, &self.matcher)
-                    {
-                        self.matches = matches;
-                    }
+                    self.refresh_matches();
                 }
                 Message::Up => self.move_up(),
                 Message::Down => self.move_down(),
                 Message::Enter => {
-                    let selected = self.select(db);
-                    self.query = None;
-                    self.matches = (0..self.location_tags.len()).collect();
-                    return selected;
+                    return self.select(db);
                 }
                 _ => {}
             }
@@ -122,10 +117,7 @@ impl Component for LocationSelectScreen {
                 Message::Down | Message::Char('s') | Message::Char('j') => self.move_down(),
                 Message::Char('/') => self.query = Some(String::new()),
                 Message::Enter => {
-                    let selected = self.select(db);
-                    self.query = None;
-                    self.matches = (0..self.location_tags.len()).collect();
-                    return selected;
+                    return self.select(db);
                 }
                 _ => {}
             }
@@ -167,22 +159,22 @@ fn recompute_matches(
     query: &Option<String>,
     tags: &[LocationTag],
     matcher: &SkimMatcherV2,
-) -> Option<Vec<usize>> {
+) -> Vec<usize> {
     if let Some(query_str) = query {
         let mut hits: Vec<(usize, i64)> = tags
             .iter()
             .enumerate()
             .filter_map(|(i, t)| {
                 matcher
-                    .fuzzy_match(tag_to_search_str(&t), &query_str)
+                    .fuzzy_match(tag_to_search_str(t), query_str)
                     .map(|score| (i, score))
             })
             .collect();
         hits.sort_by(|a, b| b.1.cmp(&a.1)); // best first
         let matched_indicies = hits.into_iter().map(|(i, _)| i).collect();
-        return Some(matched_indicies);
+        return matched_indicies;
     }
-    None
+    (0..tags.len()).collect()
 }
 
 fn tag_to_search_str(tag: &LocationTag) -> &str {
