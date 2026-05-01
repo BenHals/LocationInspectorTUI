@@ -7,7 +7,7 @@ use ratatui::{
     style::{Color, Style},
     text::Span,
     widgets::{
-        canvas::{Canvas, Line},
+        canvas::{Canvas, Context, Line, Points},
         Block, Borders,
     },
 };
@@ -32,6 +32,7 @@ pub struct MapViewCtx<'a, P: Projection> {
     pub polygons: &'a [Polygon<P>],
     pub polylines: &'a [Polyline<P>],
     pub title: &'a str,
+    pub selected_polygon: &'a Option<usize>,
 }
 
 impl<P: Projection + 'static> MapView<P> {
@@ -112,7 +113,14 @@ impl<P: Projection + 'static> Component for MapView<P> {
             .x_bounds(x_bounds)
             .y_bounds(y_bounds)
             .paint(|c| {
-                for poly in ctx.polygons {
+                let mut selected_polys = vec![];
+                for (i, poly) in ctx.polygons.iter().enumerate() {
+                    let selected = ctx.selected_polygon == &Some(i);
+                    if selected {
+                        selected_polys.push(poly);
+                        continue;
+                    }
+                    let color = Color::Red;
                     for (a, b) in poly.inner.exterior().coords().tuple_windows() {
                         if let Some([x1, y1, x2, y2]) = clip_line(a, b, x_bounds, y_bounds) {
                             c.draw(&Line {
@@ -120,7 +128,23 @@ impl<P: Projection + 'static> Component for MapView<P> {
                                 y1,
                                 x2,
                                 y2,
-                                color: Color::Red,
+                                color,
+                            });
+                        }
+                    }
+                }
+
+                for poly in selected_polys {
+                    let color = Color::Green;
+                    fill_polygon::<P>(c, poly, color, x_bounds, y_bounds);
+                    for (a, b) in poly.inner.exterior().coords().tuple_windows() {
+                        if let Some([x1, y1, x2, y2]) = clip_line(a, b, x_bounds, y_bounds) {
+                            c.draw(&Line {
+                                x1,
+                                y1,
+                                x2,
+                                y2,
+                                color,
                             });
                         }
                     }
@@ -211,4 +235,58 @@ fn clip_line(a: &Coord, b: &Coord, x_bounds: [f64; 2], y_bounds: [f64; 2]) -> Op
     }
 
     Some([a.x + t0 * dx, a.y + t0 * dy, a.x + t1 * dx, a.y + t1 * dy])
+}
+
+/// Scanline-fill a polygon onto a Canvas Context using the even-odd rule.
+/// Steps in braille sub-cell increments (2 dots × 4 dots per terminal cell).
+fn fill_polygon<P: Projection>(
+    c: &mut Context,
+    poly: &Polygon<P>,
+    color: Color,
+    x_bounds: [f64; 2],
+    y_bounds: [f64; 2],
+) {
+    let coords: Vec<&Coord> = poly.inner.exterior().coords().collect();
+    if coords.len() < 3 {
+        return;
+    }
+    let (y_min, y_max) = coords
+        .iter()
+        .fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), c| {
+            (lo.min(c.y), hi.max(c.y))
+        });
+    let y_min = y_min.max(y_bounds[0]);
+    let y_max = y_max.min(y_bounds[1]);
+
+    let dx = P::UNITS_PER_CELL_X / 2.0;
+    let dy = P::UNITS_PER_CELL_Y / 4.0;
+
+    let mut points: Vec<(f64, f64)> = Vec::new();
+    let mut y = y_min;
+    while y <= y_max {
+        let mut xs: Vec<f64> = Vec::new();
+        for (a, b) in coords.iter().tuple_windows() {
+            if (a.y > y) != (b.y > y) {
+                let t = (y - a.y) / (b.y - a.y);
+                xs.push(a.x + t * (b.x - a.x));
+            }
+        }
+        xs.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        for pair in xs.chunks(2) {
+            if let &[x_start, x_end] = pair {
+                let x0 = x_start.max(x_bounds[0]);
+                let x1 = x_end.min(x_bounds[1]);
+                let mut x = x0;
+                while x <= x1 {
+                    points.push((x, y));
+                    x += dx;
+                }
+            }
+        }
+        y += dy;
+    }
+    c.draw(&Points {
+        coords: &points,
+        color,
+    });
 }

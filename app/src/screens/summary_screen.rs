@@ -56,6 +56,7 @@ impl Component for SummaryScreen {
             polygons: &[],
             polylines: &[],
             title: &ctx.location.tag.name,
+            selected_polygon: &None,
         };
         self.map.update(msg, map_ctx, db)
     }
@@ -71,6 +72,7 @@ impl Component for SummaryScreen {
             polygons: &[],
             polylines: &[],
             title: "None",
+            selected_polygon: &None,
         };
         self.map.render(frame, layout[1], map_ctx);
         let err_str = match &ctx.err {
