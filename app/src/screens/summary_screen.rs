@@ -5,7 +5,14 @@ use ratatui::{
 };
 
 use crate::{
-    coastlines::coastlines, component::Component, components::map_view::{MapView, MapViewCtx}, db::file_db::FileDB, domain::{geometry::WGS84, location::Location}, message::Message, model::InspectingLocationView, update::Update
+    coastlines::coastlines,
+    component::Component,
+    components::map_view::{MapView, MapViewCtx},
+    db::file_db::FileDB,
+    domain::{geometry::WGS84, location::Location},
+    message::Message,
+    model::InspectingLocationView,
+    update::Update,
 };
 
 pub struct SummaryScreenCtx<'a> {
@@ -26,13 +33,22 @@ impl SummaryScreen {
 
 impl Component for SummaryScreen {
     type Ctx<'a> = SummaryScreenCtx<'a>;
-    fn update(&mut self, msg: &Message, ctx: SummaryScreenCtx, db: &FileDB) -> (Vec<Update>, Vec<Message>) {
+    fn update(
+        &mut self,
+        msg: &Message,
+        ctx: SummaryScreenCtx,
+        db: &FileDB,
+    ) -> (Vec<Update>, Vec<Message>) {
         match msg {
             Message::Esc => return (vec![Update::ClearLocation], vec![]),
-            Message::Tab => return (
-                vec![Update::SetInspectingLocationView(InspectingLocationView::InspectScreen)],
-                vec![Message::Activated],
-            ),
+            Message::Tab => {
+                return (
+                    vec![Update::SetInspectingLocationView(
+                        InspectingLocationView::InspectScreen,
+                    )],
+                    vec![Message::Activated],
+                )
+            }
             _ => (),
         }
         let map_ctx = MapViewCtx {

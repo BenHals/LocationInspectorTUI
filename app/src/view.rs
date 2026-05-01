@@ -6,7 +6,9 @@ use crate::{
     message::Message,
     model::{InspectingLocationView, InteractionMode, Model},
     screens::{
-        inspect_screen::{InspectScreen, InspectScreenCtx}, location_select_screen::LocationSelectScreen, summary_screen::{SummaryScreen, SummaryScreenCtx}
+        inspect_screen::{InspectScreen, InspectScreenCtx},
+        location_select_screen::LocationSelectScreen,
+        summary_screen::{SummaryScreen, SummaryScreenCtx},
     },
     update::Update,
 };
@@ -43,7 +45,7 @@ impl Component for View {
                         err: &ctx.err,
                     };
                     self.summary_screen.update(msg, ctx, db)
-                },
+                }
                 InspectingLocationView::InspectScreen => {
                     let ctx = InspectScreenCtx {
                         location,

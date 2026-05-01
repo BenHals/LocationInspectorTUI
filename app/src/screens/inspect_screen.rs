@@ -5,7 +5,16 @@ use ratatui::{
 };
 
 use crate::{
-    component::Component, components::map_view::{MapView, MapViewCtx}, db::file_db::FileDB, domain::{geometry::{Local, Point}, location::Location}, message::Message, model::InspectingLocationView, update::Update
+    component::Component,
+    components::map_view::{MapView, MapViewCtx},
+    db::file_db::FileDB,
+    domain::{
+        geometry::{Local, Point},
+        location::Location,
+    },
+    message::Message,
+    model::InspectingLocationView,
+    update::Update,
 };
 
 const ORIGIN: Point<Local> = Point::new(0.0, 0.0);
@@ -28,13 +37,22 @@ impl InspectScreen {
 
 impl Component for InspectScreen {
     type Ctx<'a> = InspectScreenCtx<'a>;
-    fn update(&mut self, msg: &Message, ctx: InspectScreenCtx, db: &FileDB) -> (Vec<Update>, Vec<Message>) {
+    fn update(
+        &mut self,
+        msg: &Message,
+        ctx: InspectScreenCtx,
+        db: &FileDB,
+    ) -> (Vec<Update>, Vec<Message>) {
         match msg {
             Message::Esc => return (vec![Update::ClearLocation], vec![]),
-            Message::Tab => return (
-                vec![Update::SetInspectingLocationView(InspectingLocationView::SummaryScreen)],
-                vec![Message::Activated],
-            ),
+            Message::Tab => {
+                return (
+                    vec![Update::SetInspectingLocationView(
+                        InspectingLocationView::SummaryScreen,
+                    )],
+                    vec![Message::Activated],
+                )
+            }
             Message::Activated => {
                 self.map.fit_polygons(&ctx.location.polygons);
                 return (vec![], vec![]);

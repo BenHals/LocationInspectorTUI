@@ -17,6 +17,7 @@ use crate::{
 pub struct LocationSelectScreen {
     idx: usize,
     location_tags: Vec<LocationTag>,
+    query: Option<String>,
 }
 
 impl LocationSelectScreen {
@@ -24,51 +25,78 @@ impl LocationSelectScreen {
         Self {
             idx: 0,
             location_tags: db.get_tags(),
+            query: None,
+        }
+    }
+
+    fn move_up(&mut self) {
+        self.idx = self.idx.saturating_sub(1);
+    }
+
+    fn move_down(&mut self) {
+        if self.idx < self.location_tags.len().saturating_sub(1) {
+            self.idx += 1;
+        }
+    }
+
+    fn select(&mut self, db: &FileDB) -> (Vec<Update>, Vec<Message>) {
+        let selected_tag = &self.location_tags[self.idx];
+        match db.get_by_id(&selected_tag.id) {
+            Some(loc) => {
+                self.query = None;
+                (vec![Update::SetLocation(loc)], vec![])
+            }
+            None => (
+                vec![Update::SetError(
+                    "Location not able to be loaded".to_string(),
+                )],
+                vec![],
+            ),
         }
     }
 }
 
 impl Component for LocationSelectScreen {
     type Ctx<'a> = &'a Model;
-    fn update(&mut self, msg: &Message, _model: &Model, db: &FileDB) -> (Vec<Update>, Vec<Message>) {
-        match msg {
-            Message::Down | Message::Char('j') | Message::Char('s') => {
-                if self.idx < self.location_tags.len().saturating_sub(1) {
-                    self.idx += 1;
+
+    fn update(
+        &mut self,
+        msg: &Message,
+        _model: &Model,
+        db: &FileDB,
+    ) -> (Vec<Update>, Vec<Message>) {
+        if let Some(query) = &mut self.query {
+            // search mode — chars feed the query, arrows navigate, esc exits
+            match msg {
+                Message::Char(c) => query.push(*c),
+                Message::Backspace => {
+                    query.pop();
                 }
-                (vec![], vec![])
+                Message::Esc => self.query = None,
+                Message::Up => self.move_up(),
+                Message::Down => self.move_down(),
+                Message::Enter => return self.select(db),
+                _ => {}
             }
-            Message::Up | Message::Char('k') | Message::Char('w') => {
-                if self.idx > 0 {
-                    self.idx -= 1;
-                }
-                (vec![], vec![])
+        } else {
+            // nav mode — wasd/vim/arrows navigate, '/' enters search
+            match msg {
+                Message::Up | Message::Char('w') | Message::Char('k') => self.move_up(),
+                Message::Down | Message::Char('s') | Message::Char('j') => self.move_down(),
+                Message::Char('/') => self.query = Some(String::new()),
+                Message::Enter => return self.select(db),
+                _ => {}
             }
-            Message::Enter => {
-                let selected_tag = &self.location_tags[self.idx];
-                let selected_location = db.get_by_id(&selected_tag.id);
-                if let Some(loc) = selected_location {
-                    (vec![Update::SetLocation(loc)], vec![])
-                } else {
-                    (
-                        vec![Update::SetError("Location not able to be loaded".to_string())],
-                        vec![],
-                    )
-                }
-            }
-            // search input — fuzzy logic comes in the next ticket
-            Message::Char(_c) => (vec![], vec![]),
-            Message::Backspace => (vec![], vec![]),
-            Message::Esc => (vec![], vec![]),
-            _ => (vec![], vec![]),
         }
+        (vec![], vec![])
     }
 
-    fn render(&self, frame: &mut Frame, area: Rect, ctx: &Model) {
+    fn render(&self, frame: &mut Frame, area: Rect, _ctx: &Model) {
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Min(1), Constraint::Length(1)])
             .split(area);
+
         let items: Vec<ListItem> = self
             .location_tags
             .iter()
@@ -82,14 +110,10 @@ impl Component for LocationSelectScreen {
         list_state.select(Some(self.idx));
         frame.render_stateful_widget(list, layout[0], &mut list_state);
 
-        let err_str = match &ctx.err {
-            Some(err) => format!(" - {}", err),
-            _ => String::new(),
+        let p = match &self.query {
+            Some(q) => Paragraph::new(format!("/ {}", q)),
+            None => Paragraph::new("Press '/' to search"),
         };
-        let p = Paragraph::new(format!(
-            "Location: {}{}",
-            self.location_tags[self.idx].name, err_str
-        ));
         frame.render_widget(p, layout[1]);
     }
 }

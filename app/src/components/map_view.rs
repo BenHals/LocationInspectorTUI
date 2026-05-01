@@ -35,7 +35,11 @@ pub struct MapViewCtx<'a, P: Projection> {
 }
 
 impl<P: Projection + 'static> MapView<P> {
-    pub fn new(background: &'static [Polyline<P>], scale: Option<f64>, show_location: bool) -> Self {
+    pub fn new(
+        background: &'static [Polyline<P>],
+        scale: Option<f64>,
+        show_location: bool,
+    ) -> Self {
         Self {
             offset_x: 0.0,
             offset_y: 0.0,
@@ -49,7 +53,8 @@ impl<P: Projection + 'static> MapView<P> {
     /// Reset offsets to origin and set scale so the given polygons fit the viewport
     /// with a small margin. Polygons are assumed to be in this MapView's projection.
     pub fn fit_polygons(&mut self, polygons: &[Polygon<P>]) {
-        let half_extent = polygons.iter()
+        let half_extent = polygons
+            .iter()
             .flat_map(|p| p.inner.exterior().coords())
             .fold(0.0_f64, |acc, c| acc.max(c.x.abs()).max(c.y.abs()));
 
@@ -78,9 +83,9 @@ impl<P: Projection + 'static> Component for MapView<P> {
         const ZOOM_FACTOR: f64 = 1.0 / 0.9;
 
         match msg {
-            Message::Char('w') | Message::Char('k') | Message::Up    => self.offset_y += pan_y,
-            Message::Char('s') | Message::Char('j') | Message::Down  => self.offset_y -= pan_y,
-            Message::Char('a') | Message::Char('h') | Message::Left  => self.offset_x -= pan_x,
+            Message::Char('w') | Message::Char('k') | Message::Up => self.offset_y += pan_y,
+            Message::Char('s') | Message::Char('j') | Message::Down => self.offset_y -= pan_y,
+            Message::Char('a') | Message::Char('h') | Message::Left => self.offset_x -= pan_x,
             Message::Char('d') | Message::Char('l') | Message::Right => self.offset_x += pan_x,
             Message::Char('+') => self.scale /= ZOOM_FACTOR,
             Message::Char('-') => self.scale *= ZOOM_FACTOR,
@@ -110,21 +115,39 @@ impl<P: Projection + 'static> Component for MapView<P> {
                 for poly in ctx.polygons {
                     for (a, b) in poly.inner.exterior().coords().tuple_windows() {
                         if let Some([x1, y1, x2, y2]) = clip_line(a, b, x_bounds, y_bounds) {
-                            c.draw(&Line { x1, y1, x2, y2, color: Color::Red });
+                            c.draw(&Line {
+                                x1,
+                                y1,
+                                x2,
+                                y2,
+                                color: Color::Red,
+                            });
                         }
                     }
                 }
                 for line in ctx.polylines {
                     for (a, b) in line.inner.coords().tuple_windows() {
                         if let Some([x1, y1, x2, y2]) = clip_line(a, b, x_bounds, y_bounds) {
-                            c.draw(&Line { x1, y1, x2, y2, color: Color::Red });
+                            c.draw(&Line {
+                                x1,
+                                y1,
+                                x2,
+                                y2,
+                                color: Color::Red,
+                            });
                         }
                     }
                 }
                 for line in self.background {
                     for (a, b) in line.inner.coords().tuple_windows() {
                         if let Some([x1, y1, x2, y2]) = clip_line(a, b, x_bounds, y_bounds) {
-                            c.draw(&Line { x1, y1, x2, y2, color: Color::Green });
+                            c.draw(&Line {
+                                x1,
+                                y1,
+                                x2,
+                                y2,
+                                color: Color::Green,
+                            });
                         }
                     }
                 }
@@ -152,35 +175,40 @@ fn clip_line(a: &Coord, b: &Coord, x_bounds: [f64; 2], y_bounds: [f64; 2]) -> Op
     let mut t1 = 1.0_f64;
 
     let p_q = [
-        (-dx, a.x - x_bounds[0]),     // left
-        ( dx, x_bounds[1] - a.x),     // right
-        (-dy, a.y - y_bounds[0]),     // bottom
-        ( dy, y_bounds[1] - a.y),     // top
+        (-dx, a.x - x_bounds[0]), // left
+        (dx, x_bounds[1] - a.x),  // right
+        (-dy, a.y - y_bounds[0]), // bottom
+        (dy, y_bounds[1] - a.y),  // top
     ];
 
     for (p, q) in p_q {
         if p == 0.0 {
             // line is parallel to this boundary
             if q < 0.0 {
-                return None;          // and entirely outside
+                return None; // and entirely outside
             }
             // else: no constraint from this boundary
         } else {
             let t = q / p;
             if p < 0.0 {
                 // line is entering this slab
-                if t > t1 { return None; }
-                if t > t0 { t0 = t; }
+                if t > t1 {
+                    return None;
+                }
+                if t > t0 {
+                    t0 = t;
+                }
             } else {
                 // line is exiting this slab
-                if t < t0 { return None; }
-                if t < t1 { t1 = t; }
+                if t < t0 {
+                    return None;
+                }
+                if t < t1 {
+                    t1 = t;
+                }
             }
         }
     }
 
-    Some([
-        a.x + t0 * dx, a.y + t0 * dy,
-        a.x + t1 * dx, a.y + t1 * dy,
-    ])
+    Some([a.x + t0 * dx, a.y + t0 * dy, a.x + t1 * dx, a.y + t1 * dy])
 }
