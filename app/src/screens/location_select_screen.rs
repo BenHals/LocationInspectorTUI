@@ -32,19 +32,19 @@ impl Component for LocationSelectScreen {
     type Ctx<'a> = &'a Model;
     fn update(&mut self, msg: &Message, _model: &Model, db: &FileDB) -> (Vec<Update>, Vec<Message>) {
         match msg {
-            Message::ListDown => {
+            Message::Down | Message::Char('j') | Message::Char('s') => {
                 if self.idx < self.location_tags.len().saturating_sub(1) {
                     self.idx += 1;
                 }
                 (vec![], vec![])
             }
-            Message::ListUp => {
+            Message::Up | Message::Char('k') | Message::Char('w') => {
                 if self.idx > 0 {
                     self.idx -= 1;
                 }
                 (vec![], vec![])
             }
-            Message::Select => {
+            Message::Enter => {
                 let selected_tag = &self.location_tags[self.idx];
                 let selected_location = db.get_by_id(&selected_tag.id);
                 if let Some(loc) = selected_location {
@@ -56,6 +56,10 @@ impl Component for LocationSelectScreen {
                     )
                 }
             }
+            // search input — fuzzy logic comes in the next ticket
+            Message::Char(_c) => (vec![], vec![]),
+            Message::Backspace => (vec![], vec![]),
+            Message::Esc => (vec![], vec![]),
             _ => (vec![], vec![]),
         }
     }

@@ -28,7 +28,7 @@ impl Component for SummaryScreen {
     type Ctx<'a> = SummaryScreenCtx<'a>;
     fn update(&mut self, msg: &Message, ctx: SummaryScreenCtx, db: &FileDB) -> (Vec<Update>, Vec<Message>) {
         match msg {
-            Message::Back => return (vec![Update::ClearLocation], vec![]),
+            Message::Esc => return (vec![Update::ClearLocation], vec![]),
             Message::Tab => return (
                 vec![Update::SetInspectingLocationView(InspectingLocationView::InspectScreen)],
                 vec![Message::Activated],

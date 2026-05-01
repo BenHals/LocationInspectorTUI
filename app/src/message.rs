@@ -1,16 +1,18 @@
 pub enum Message {
-    Quit,
-    Select,
-    Back,
+    // primitive key events
+    Char(char),
+    Backspace,
+    Up,
+    Down,
+    Left,
+    Right,
+    Enter,
+    Esc,
     Tab,
-    ShiftUp,
-    ShiftDown,
-    ShiftLeft,
-    ShiftRight,
-    ZoomIn,
-    ZoomOut,
-    ListUp,
-    ListDown,
-    /// Synthetic — dispatched to a screen when it becomes active.
+
+    // top-level
+    Quit,
+
+    // synthetic — dispatched to a screen when it becomes active
     Activated,
 }

@@ -78,12 +78,12 @@ impl<P: Projection + 'static> Component for MapView<P> {
         const ZOOM_FACTOR: f64 = 1.0 / 0.9;
 
         match msg {
-            Message::ShiftUp    => self.offset_y += pan_y,
-            Message::ShiftDown  => self.offset_y -= pan_y,
-            Message::ShiftLeft  => self.offset_x -= pan_x,
-            Message::ShiftRight => self.offset_x += pan_x,
-            Message::ZoomIn     => self.scale /= ZOOM_FACTOR,
-            Message::ZoomOut    => self.scale *= ZOOM_FACTOR,
+            Message::Char('w') | Message::Char('k') | Message::Up    => self.offset_y += pan_y,
+            Message::Char('s') | Message::Char('j') | Message::Down  => self.offset_y -= pan_y,
+            Message::Char('a') | Message::Char('h') | Message::Left  => self.offset_x -= pan_x,
+            Message::Char('d') | Message::Char('l') | Message::Right => self.offset_x += pan_x,
+            Message::Char('+') => self.scale /= ZOOM_FACTOR,
+            Message::Char('-') => self.scale *= ZOOM_FACTOR,
             _ => (),
         };
         (vec![], vec![])
