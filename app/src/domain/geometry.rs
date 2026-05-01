@@ -37,14 +37,24 @@ impl<P: Projection> Point<P> {
     }
 }
 
+#[derive(Clone)]
+pub struct RegionMetadata {
+    pub name: String,
+    pub id: String,
+    pub kind: Option<String>,
+    pub category: String,
+}
+
 pub struct Polygon<P: Projection> {
+    pub metadata: RegionMetadata,
     pub inner: GeoPolygon,
     _proj: PhantomData<P>,
 }
 
 impl<P: Projection> Polygon<P> {
-    pub fn new(inner: GeoPolygon) -> Self {
+    pub fn new(metadata: RegionMetadata, inner: GeoPolygon) -> Self {
         Self {
+            metadata,
             inner,
             _proj: PhantomData,
         }

@@ -1,7 +1,7 @@
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Modifier, Style},
-    widgets::{Block, List, ListState, Paragraph},
+    widgets::{Block, List, ListState},
     Frame,
 };
 
@@ -26,14 +26,14 @@ pub struct InspectScreenCtx<'a> {
 }
 pub struct InspectScreen {
     pub map: MapView<Local>,
-    selected_paddock: Option<usize>,
+    selected_region: Option<usize>,
 }
 
 impl InspectScreen {
     pub fn new() -> Self {
         Self {
             map: MapView::new(&[], Some(0.1), false),
-            selected_paddock: None,
+            selected_region: None,
         }
     }
 }
@@ -61,26 +61,26 @@ impl Component for InspectScreen {
                 return (vec![], vec![]);
             }
             Message::Up => {
-                if let Some(i) = self.selected_paddock {
+                if let Some(i) = self.selected_region {
                     if i > 0 {
-                        self.selected_paddock = Some(i - 1);
+                        self.selected_region = Some(i - 1);
                     } else {
-                        self.selected_paddock = None;
+                        self.selected_region = None;
                     }
                 } else {
-                    self.selected_paddock = Some(ctx.location.polygons.len() - 1);
+                    self.selected_region = Some(ctx.location.polygons.len() - 1);
                 }
                 return (vec![], vec![]);
             }
             Message::Down => {
-                if let Some(i) = self.selected_paddock {
+                if let Some(i) = self.selected_region {
                     if i < ctx.location.polygons.len() - 1 {
-                        self.selected_paddock = Some(i + 1);
+                        self.selected_region = Some(i + 1);
                     } else {
-                        self.selected_paddock = None;
+                        self.selected_region = None;
                     }
                 } else {
-                    self.selected_paddock = Some(0);
+                    self.selected_region = Some(0);
                 }
                 return (vec![], vec![]);
             }
@@ -91,7 +91,7 @@ impl Component for InspectScreen {
             polygons: &ctx.location.polygons,
             polylines: &[],
             title: &ctx.location.tag.name,
-            selected_polygon: &self.selected_paddock,
+            selected_polygon: &self.selected_region,
         };
         self.map.update(msg, map_ctx, db)
     }
@@ -107,7 +107,7 @@ impl Component for InspectScreen {
             polygons: &ctx.location.polygons,
             polylines: &[],
             title: &ctx.location.tag.name,
-            selected_polygon: &self.selected_paddock,
+            selected_polygon: &self.selected_region,
         };
         self.map.render(frame, layout[1], map_ctx);
 
@@ -119,7 +119,7 @@ impl Component for InspectScreen {
         let layers_block = Block::bordered().title("Layers");
         frame.render_widget(&layers_block, controls_layout[0]);
         let mut layers_list_state = ListState::default();
-        let layers_list = List::new(["Paddocks"])
+        let layers_list = List::new(["Regions"])
             .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
             .highlight_symbol("▶ ");
         layers_list_state.select(Some(0));
@@ -129,29 +129,34 @@ impl Component for InspectScreen {
             &mut layers_list_state,
         );
 
-        let paddocks_block = Block::bordered().title("Paddocks");
-        frame.render_widget(&paddocks_block, controls_layout[1]);
-        let mut paddock_list_state = ListState::default();
+        let regions_block = Block::bordered().title("Regions");
+        frame.render_widget(&regions_block, controls_layout[1]);
+        let mut region_list_state = ListState::default();
 
-        let paddock_ids: Vec<String> = std::iter::once("<None>".to_string())
-            .chain((0..ctx.location.polygons.len()).map(|i| i.to_string()))
+        let region_labels: Vec<String> = std::iter::once("<None>".to_string())
+            .chain(
+                ctx.location
+                    .polygons
+                    .iter()
+                    .map(|p| p.metadata.name.clone()),
+            )
             .collect();
-        let paddock_list = List::new(paddock_ids.iter().map(|s| s.as_str()))
+        let region_list = List::new(region_labels.iter().map(|s| s.as_str()))
             .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
             .highlight_symbol("▶ ");
 
-        match self.selected_paddock {
+        match self.selected_region {
             Some(i) => {
-                paddock_list_state.select(Some(1 + i));
+                region_list_state.select(Some(1 + i));
             }
             None => {
-                paddock_list_state.select(Some(0));
+                region_list_state.select(Some(0));
             }
         }
         frame.render_stateful_widget(
-            paddock_list,
-            paddocks_block.inner(controls_layout[1]),
-            &mut paddock_list_state,
+            region_list,
+            regions_block.inner(controls_layout[1]),
+            &mut region_list_state,
         );
     }
 }

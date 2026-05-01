@@ -32,7 +32,7 @@ impl App {
     }
 
     pub fn render(&self, frame: &mut Frame) {
-        let area = frame.size();
+        let area = frame.area();
         self.view.render(frame, area, &self.model);
     }
 }

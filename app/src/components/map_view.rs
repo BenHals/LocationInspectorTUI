@@ -1,10 +1,10 @@
 use geo::Coord;
 use itertools::Itertools;
-use ratatui::style::Stylize;
 use std::marker::PhantomData;
 
 use ratatui::{
     style::{Color, Style},
+    symbols::Marker,
     text::Span,
     widgets::{
         canvas::{Canvas, Context, Line, Points},
@@ -110,6 +110,7 @@ impl<P: Projection + 'static> Component for MapView<P> {
 
         let canvas = Canvas::default()
             .block(Block::default().borders(Borders::ALL).title(ctx.title))
+            .marker(Marker::Braille)
             .x_bounds(x_bounds)
             .y_bounds(y_bounds)
             .paint(|c| {
@@ -136,7 +137,7 @@ impl<P: Projection + 'static> Component for MapView<P> {
 
                 for poly in selected_polys {
                     let color = Color::Green;
-                    fill_polygon::<P>(c, poly, color, x_bounds, y_bounds);
+                    fill_polygon::<P>(c, poly, color, x_bounds, y_bounds, self.scale);
                     for (a, b) in poly.inner.exterior().coords().tuple_windows() {
                         if let Some([x1, y1, x2, y2]) = clip_line(a, b, x_bounds, y_bounds) {
                             c.draw(&Line {
@@ -245,6 +246,7 @@ fn fill_polygon<P: Projection>(
     color: Color,
     x_bounds: [f64; 2],
     y_bounds: [f64; 2],
+    scale: f64,
 ) {
     let coords: Vec<&Coord> = poly.inner.exterior().coords().collect();
     if coords.len() < 3 {
@@ -258,8 +260,8 @@ fn fill_polygon<P: Projection>(
     let y_min = y_min.max(y_bounds[0]);
     let y_max = y_max.min(y_bounds[1]);
 
-    let dx = P::UNITS_PER_CELL_X / 2.0;
-    let dy = P::UNITS_PER_CELL_Y / 4.0;
+    let dx = P::UNITS_PER_CELL_X * scale / 2.0;
+    let dy = P::UNITS_PER_CELL_Y * scale / 4.0;
 
     let mut points: Vec<(f64, f64)> = Vec::new();
     let mut y = y_min;
