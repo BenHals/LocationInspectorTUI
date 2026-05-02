@@ -63,6 +63,7 @@ impl App {
             .map(|p| p.metadata.id.clone())
             .collect();
         let layers = self.model.config.layers.clone();
+        let data_root = self.model.config.data.root_dir.clone();
         let already_triggered: HashSet<String> = state
             .layers
             .iter()
@@ -86,6 +87,7 @@ impl App {
                 layer_config,
                 location_id.clone(),
                 region_ids.clone(),
+                data_root.clone(),
                 self.async_tx.clone(),
             );
         }

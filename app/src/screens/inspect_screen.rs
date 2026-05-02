@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Modifier, Style},
@@ -8,20 +10,25 @@ use ratatui::{
 use crate::{
     component::Component,
     components::map_view::{MapView, MapViewCtx},
+    config::LayerConfig,
     db::file_db::FileDB,
     domain::{
         geometry::{Local, Point},
         location::Location,
     },
     message::Message,
-    model::InspectingLocationView,
+    model::{InspectingLocationView, LayerState},
     update::Update,
 };
 
 const ORIGIN: Point<Local> = Point::new(0.0, 0.0);
+const DEFAULT_LAYER_ID: &str = "boundaries";
 
 pub struct InspectScreenCtx<'a> {
     pub location: &'a Location,
+    pub layers: &'a HashMap<String, LayerState>,
+    pub active_layer: &'a String,
+    pub configured_layers: &'a [LayerConfig],
     pub err: &'a Option<String>,
 }
 pub struct InspectScreen {
@@ -84,6 +91,48 @@ impl Component for InspectScreen {
                 }
                 return (vec![], vec![]);
             }
+            Message::Left => {
+                let layer_ids: Vec<String> = std::iter::once(DEFAULT_LAYER_ID.to_string())
+                    .chain(ctx.configured_layers.iter().map(|s| s.id.to_string()))
+                    .collect();
+
+                let layer_idx = layer_ids
+                    .iter()
+                    .position(|id| id == ctx.active_layer)
+                    .unwrap_or_default();
+                let mut next_layer_idx = layer_idx as i64 - 1;
+                if next_layer_idx < 0 {
+                    next_layer_idx = (layer_ids.len() - 1) as i64;
+                }
+
+                return (
+                    vec![Update::SetActiveLayer {
+                        layer_id: layer_ids[next_layer_idx as usize].clone(),
+                    }],
+                    vec![],
+                );
+            }
+            Message::Right => {
+                let layer_ids: Vec<String> = std::iter::once(DEFAULT_LAYER_ID.to_string())
+                    .chain(ctx.configured_layers.iter().map(|s| s.id.to_string()))
+                    .collect();
+
+                let layer_idx = layer_ids
+                    .iter()
+                    .position(|id| id == ctx.active_layer)
+                    .unwrap_or_default();
+                let mut next_layer_idx = layer_idx as i64 + 1;
+                if next_layer_idx >= layer_ids.len() as i64 {
+                    next_layer_idx = 0;
+                }
+
+                return (
+                    vec![Update::SetActiveLayer {
+                        layer_id: layer_ids[next_layer_idx as usize].clone(),
+                    }],
+                    vec![],
+                );
+            }
             _ => (),
         }
         let map_ctx = MapViewCtx {
@@ -99,7 +148,7 @@ impl Component for InspectScreen {
     fn render<'a>(&self, frame: &mut Frame, area: Rect, ctx: InspectScreenCtx<'a>) {
         let layout = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Min(20), Constraint::Percentage(100)])
+            .constraints([Constraint::Min(30), Constraint::Percentage(100)])
             .split(area);
 
         let map_ctx = MapViewCtx {
@@ -119,10 +168,27 @@ impl Component for InspectScreen {
         let layers_block = Block::bordered().title("Layers");
         frame.render_widget(&layers_block, controls_layout[0]);
         let mut layers_list_state = ListState::default();
-        let layers_list = List::new(["Regions"])
+        let layer_labels: Vec<String> = std::iter::once("Boundaries".to_string())
+            .chain(ctx.configured_layers.iter().map(|s| {
+                let layer_status = match ctx.layers.get(&s.id) {
+                    Some(LayerState::Loading) => "Loading".to_string(),
+                    Some(LayerState::Loaded(_)) => "Loaded!".to_string(),
+                    Some(LayerState::Failed(err)) => format!("Failed - {}", err),
+                    None => "Not Triggered".to_string(),
+                };
+                format!("{} - {}", s.name, layer_status)
+            }))
+            .collect();
+
+        let layer_ids: Vec<String> = std::iter::once(DEFAULT_LAYER_ID.to_string())
+            .chain(ctx.configured_layers.iter().map(|s| s.id.to_string()))
+            .collect();
+        let layers_list = List::new(layer_labels)
             .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
             .highlight_symbol("▶ ");
-        layers_list_state.select(Some(0));
+
+        let layer_idx = layer_ids.iter().position(|id| id == ctx.active_layer);
+        layers_list_state.select(layer_idx);
         frame.render_stateful_widget(
             &layers_list,
             layers_block.inner(controls_layout[0]),
@@ -134,12 +200,18 @@ impl Component for InspectScreen {
         let mut region_list_state = ListState::default();
 
         let region_labels: Vec<String> = std::iter::once("<None>".to_string())
-            .chain(
-                ctx.location
-                    .polygons
-                    .iter()
-                    .map(|p| p.metadata.name.clone()),
-            )
+            .chain(ctx.location.polygons.iter().map(|p| {
+                let region_layer_val = match ctx.layers.get(ctx.active_layer) {
+                    Some(LayerState::Loading) => "Loading".to_string(),
+                    Some(LayerState::Failed(_)) => "".to_string(),
+                    Some(LayerState::Loaded(values)) => match values.get(&p.metadata.id) {
+                        Some(v) => format!("{:.2}", v),
+                        None => "-".to_string(),
+                    },
+                    None => "".to_string(),
+                };
+                format!("{} - {}", p.metadata.name.clone(), region_layer_val)
+            }))
             .collect();
         let region_list = List::new(region_labels.iter().map(|s| s.as_str()))
             .highlight_style(Style::default().add_modifier(Modifier::REVERSED))

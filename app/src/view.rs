@@ -39,7 +39,13 @@ impl Component for View {
         match &ctx.interaction_mode {
             InteractionMode::BrowsingLocation => self.location_select_screen.update(msg, ctx, db),
             InteractionMode::InspectingLocation {
-                state: InspectingState { view, location, .. },
+                state:
+                    InspectingState {
+                        view,
+                        location,
+                        layers,
+                        active_layer,
+                    },
             } => match view {
                 InspectingLocationView::SummaryScreen => {
                     let ctx = SummaryScreenCtx {
@@ -51,6 +57,9 @@ impl Component for View {
                 InspectingLocationView::InspectScreen => {
                     let ctx = InspectScreenCtx {
                         location,
+                        layers,
+                        active_layer,
+                        configured_layers: &ctx.config.layers,
                         err: &ctx.err,
                     };
                     self.inspect_screen.update(msg, ctx, db)
@@ -64,7 +73,13 @@ impl Component for View {
                 self.location_select_screen.render(frame, area, ctx)
             }
             InteractionMode::InspectingLocation {
-                state: InspectingState { view, location, .. },
+                state:
+                    InspectingState {
+                        view,
+                        location,
+                        layers,
+                        active_layer,
+                    },
             } => match view {
                 InspectingLocationView::SummaryScreen => {
                     let screen_ctx = SummaryScreenCtx {
@@ -76,6 +91,9 @@ impl Component for View {
                 InspectingLocationView::InspectScreen => {
                     let screen_ctx = InspectScreenCtx {
                         location,
+                        layers,
+                        active_layer,
+                        configured_layers: &ctx.config.layers,
                         err: &ctx.err,
                     };
                     self.inspect_screen.render(frame, area, screen_ctx)

@@ -2,6 +2,7 @@ use std::{
     collections::HashMap,
     error::Error,
     io::Write,
+    path::PathBuf,
     process::{Command, Stdio},
     sync::mpsc,
 };
@@ -12,10 +13,11 @@ pub fn spawn_layer_load(
     config: LayerConfig,
     location_id: String,
     region_ids: Vec<String>,
+    data_root: PathBuf,
     tx: mpsc::Sender<Update>,
 ) {
     std::thread::spawn(move || {
-        let update = match run_layer_command(&config, &location_id, &region_ids) {
+        let update = match run_layer_command(&config, &location_id, &region_ids, &data_root) {
             Ok(layer_data) => Update::SetLayerData {
                 location_id,
                 layer_id: config.id,
@@ -35,9 +37,11 @@ pub fn run_layer_command(
     config: &LayerConfig,
     location_id: &str,
     region_ids: &[String],
+    data_root: &PathBuf,
 ) -> Result<HashMap<String, f64>, Box<dyn Error>> {
     let mut child = Command::new(&config.command)
         .env("LOCTUI_LOCATION_ID", location_id)
+        .env("LOCTUI_DATA_ROOT", data_root)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
