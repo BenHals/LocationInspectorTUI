@@ -1,0 +1,6 @@
+[
+{"id":"nyc","name":"New York City","countryCode":"US","countrySubdivision":"NY","type":"metropolitan","createdDate":"2024-01-15T00:00:00Z","status":"active","coord":[-74.006,40.7128],"polygon_path":"polygons/nyc.json"},
+{"id":"lon","name":"London","countryCode":"GB","countrySubdivision":"LND","type":"metropolitan","createdDate":"2024-02-20T00:00:00Z","status":"active","coord":[-0.1276,51.5074],"polygon_path":"polygons/lon.json"},
+{"id":"tyo","name":"Tokyo","countryCode":"JP","countrySubdivision":"13","type":"megacity","createdDate":"2024-03-10T00:00:00Z","status":"active","coord":[139.6917,35.6895],"polygon_path":"polygons/tyo.json"},
+{"id":"syd","name":"Sydney","countryCode":"AU","countrySubdivision":"NSW","type":"metropolitan","createdDate":"2024-04-05T00:00:00Z","status":"active","coord":[151.2093,-33.8688],"polygon_path":"polygons/syd.json"}
+]

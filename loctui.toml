@@ -1,0 +1,20 @@
+[ui]
+region_label = "Region"
+
+[data]
+root_dir = "app/data/example_data"
+
+[[layers]]
+id = "population"
+name = "Population"
+command = "scripts/example-population.sh"
+
+[[layers]]
+id = "area_km2"
+name = "Area (km²)"
+command = "scripts/example-area.sh"
+
+[[layers]]
+id = "elevation"
+name = "Elevation (m)"
+command = "scripts/example-elevation.sh"

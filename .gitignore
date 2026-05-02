@@ -1,2 +1,7 @@
 /target
 docs/
+app/data/*
+!app/data/example_data
+!app/data/example_data/**
+scripts/*
+!scripts/example-*.sh
