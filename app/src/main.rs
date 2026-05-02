@@ -13,6 +13,7 @@ mod config;
 mod db;
 mod domain;
 mod event;
+mod layers;
 mod message;
 mod model;
 mod screens;
