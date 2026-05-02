@@ -4,7 +4,7 @@ use crate::{
     component::Component,
     db::file_db::FileDB,
     message::Message,
-    model::{InspectingLocationView, InteractionMode, Model},
+    model::{InspectingLocationView, InspectingState, InteractionMode, Model},
     screens::{
         inspect_screen::{InspectScreen, InspectScreenCtx},
         location_select_screen::LocationSelectScreen,
@@ -38,7 +38,9 @@ impl Component for View {
         }
         match &ctx.interaction_mode {
             InteractionMode::BrowsingLocation => self.location_select_screen.update(msg, ctx, db),
-            InteractionMode::InspectingLocation { view, location } => match view {
+            InteractionMode::InspectingLocation {
+                state: InspectingState { view, location, .. },
+            } => match view {
                 InspectingLocationView::SummaryScreen => {
                     let ctx = SummaryScreenCtx {
                         location,
@@ -61,7 +63,9 @@ impl Component for View {
             InteractionMode::BrowsingLocation => {
                 self.location_select_screen.render(frame, area, ctx)
             }
-            InteractionMode::InspectingLocation { view, location } => match view {
+            InteractionMode::InspectingLocation {
+                state: InspectingState { view, location, .. },
+            } => match view {
                 InspectingLocationView::SummaryScreen => {
                     let screen_ctx = SummaryScreenCtx {
                         location,

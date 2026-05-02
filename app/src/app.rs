@@ -1,7 +1,8 @@
 use ratatui::Frame;
 
 use crate::{
-    component::Component, db::file_db::FileDB, message::Message, model::Model, view::View,
+    component::Component, config::Config, db::file_db::FileDB, message::Message, model::Model,
+    view::View,
 };
 
 pub struct App {
@@ -11,9 +12,9 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(db: FileDB) -> Self {
+    pub fn new(db: FileDB, config: Config) -> Self {
         Self {
-            model: Model::new(),
+            model: Model::new(config),
             view: View::new(&db),
             db,
         }
