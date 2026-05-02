@@ -1,22 +1,26 @@
+use std::sync::mpsc;
+
 use ratatui::Frame;
 
 use crate::{
     component::Component, config::Config, db::file_db::FileDB, message::Message, model::Model,
-    view::View,
+    update::Update, view::View,
 };
 
 pub struct App {
     pub model: Model,
     pub view: View,
     pub db: FileDB,
+    pub async_tx: mpsc::Sender<Update>,
 }
 
 impl App {
-    pub fn new(db: FileDB, config: Config) -> Self {
+    pub fn new(db: FileDB, config: Config, async_tx: mpsc::Sender<Update>) -> Self {
         Self {
             model: Model::new(config),
             view: View::new(&db),
             db,
+            async_tx,
         }
     }
 

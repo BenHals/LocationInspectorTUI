@@ -1,8 +1,8 @@
-use std::path::Path;
+use std::{path::Path, sync::mpsc};
 
 use crate::{
     app::App, config::Config, db::file_db::FileDB, event::poll_and_handle_event,
-    model::ApplicationStatus,
+    model::ApplicationStatus, update::Update,
 };
 
 mod app;
@@ -32,9 +32,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = tui::init_terminal()?;
 
     let db = FileDB::new(Path::new(&config.data.root_dir.join("locations.json")))?;
-    let mut app = App::new(db, config);
+    let (async_tx, async_rx) = mpsc::channel::<Update>();
+    let mut app = App::new(db, config, async_tx);
     while app.model.application_status == ApplicationStatus::Running {
         terminal.draw(|frame| app.render(frame))?;
+
+        while let Ok(u) = async_rx.try_recv() {
+            app.model.apply(u);
+        }
+
         if let Some(msg) = poll_and_handle_event()? {
             app.handle(msg);
         }
