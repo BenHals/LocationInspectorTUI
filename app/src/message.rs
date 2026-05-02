@@ -15,4 +15,5 @@ pub enum Message {
 
     // synthetic — dispatched to a screen when it becomes active
     Activated,
+    LoadLayers,
 }

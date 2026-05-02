@@ -1,0 +1,10 @@
+[ui]
+region_label = "Region"
+
+[data]
+root_dir = "app/data/example_data"
+
+[[layers]]
+id = "test"
+name = "Test"
+command = "scripts/test-layer.sh"

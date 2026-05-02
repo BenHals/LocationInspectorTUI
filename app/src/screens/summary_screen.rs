@@ -46,7 +46,7 @@ impl Component for SummaryScreen {
                     vec![Update::SetInspectingLocationView(
                         InspectingLocationView::InspectScreen,
                     )],
-                    vec![Message::Activated],
+                    vec![Message::Activated, Message::LoadLayers],
                 )
             }
             _ => (),
