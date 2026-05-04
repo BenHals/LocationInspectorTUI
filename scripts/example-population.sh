@@ -16,21 +16,18 @@ table='{
   "nyc-manhattan":     1694251,
   "nyc-bronx":         1472654,
 
-  "lon-bounds":              8961989,
   "lon-camden":              270029,
   "lon-greenwich":           287942,
   "lon-hammersmith-fulham":  183200,
   "lon-newham":              351000,
   "lon-westminster":         261000,
 
-  "tyo-bounds":    13960000,
   "tyo-chiyoda":   67485,
   "tyo-shinagawa": 415000,
   "tyo-shinjuku":  348000,
   "tyo-shibuya":   230000,
   "tyo-minato":    260000,
 
-  "syd-bounds":       250000,
   "syd-sydney":       250000,
   "syd-north-sydney": 73000,
   "syd-bondi":        11656,

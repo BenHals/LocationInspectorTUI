@@ -32,7 +32,7 @@ filtered="$(jq -c \
     .[:-1] as $pts
     | ($pts | length) as $n
     | [(($pts | map(.[0]) | add) / $n), (($pts | map(.[1]) | add) / $n)];
-  (map({key: .id, value: (.ring | centroid)}) | from_entries) as $c
+  (.regions | map({key: .id, value: (.ring | centroid)}) | from_entries) as $c
   | ($city_lat * 0.017453292519943295) as $lat_rad
   | (111320.0 * ($lat_rad | cos)) as $m_per_deg_lng
   | $ids

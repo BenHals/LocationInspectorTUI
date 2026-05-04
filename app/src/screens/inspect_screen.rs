@@ -9,7 +9,7 @@ use ratatui::{
 
 use crate::{
     component::Component,
-    components::map_view::{MapView, MapViewCtx},
+    components::map_view::{ColorMap, FillByValue, MapView, MapViewCtx},
     config::LayerConfig,
     db::file_db::FileDB,
     domain::{
@@ -64,7 +64,8 @@ impl Component for InspectScreen {
                 )
             }
             Message::Activated => {
-                self.map.fit_polygons(&ctx.location.polygons);
+                self.map
+                    .fit_polygons(&ctx.location.boundaries, &ctx.location.regions);
                 return (vec![], vec![]);
             }
             Message::Up => {
@@ -75,13 +76,13 @@ impl Component for InspectScreen {
                         self.selected_region = None;
                     }
                 } else {
-                    self.selected_region = Some(ctx.location.polygons.len() - 1);
+                    self.selected_region = Some(ctx.location.regions.len() - 1);
                 }
                 return (vec![], vec![]);
             }
             Message::Down => {
                 if let Some(i) = self.selected_region {
-                    if i < ctx.location.polygons.len() - 1 {
+                    if i < ctx.location.regions.len() - 1 {
                         self.selected_region = Some(i + 1);
                     } else {
                         self.selected_region = None;
@@ -137,10 +138,12 @@ impl Component for InspectScreen {
         }
         let map_ctx = MapViewCtx {
             center: &ORIGIN,
-            polygons: &ctx.location.polygons,
+            boundaries: &ctx.location.boundaries,
+            regions: &ctx.location.regions,
             polylines: &[],
             title: &ctx.location.tag.name,
-            selected_polygon: &self.selected_region,
+            selected_region: &self.selected_region,
+            fill_info: None,
         };
         self.map.update(msg, map_ctx, db)
     }
@@ -151,12 +154,23 @@ impl Component for InspectScreen {
             .constraints([Constraint::Min(30), Constraint::Percentage(100)])
             .split(area);
 
+        let layer_fills = match ctx.layers.get(ctx.active_layer) {
+            Some(LayerState::Loading) => None,
+            Some(LayerState::Failed(_)) => None,
+            Some(LayerState::Loaded(values)) => Some(FillByValue {
+                map: ColorMap::magma(),
+                values: values.clone(),
+            }),
+            None => None,
+        };
         let map_ctx = MapViewCtx {
             center: &ORIGIN,
-            polygons: &ctx.location.polygons,
+            boundaries: &ctx.location.boundaries,
+            regions: &ctx.location.regions,
             polylines: &[],
             title: &ctx.location.tag.name,
-            selected_polygon: &self.selected_region,
+            selected_region: &self.selected_region,
+            fill_info: layer_fills,
         };
         self.map.render(frame, layout[1], map_ctx);
 
@@ -200,7 +214,7 @@ impl Component for InspectScreen {
         let mut region_list_state = ListState::default();
 
         let region_labels: Vec<String> = std::iter::once("<None>".to_string())
-            .chain(ctx.location.polygons.iter().map(|p| {
+            .chain(ctx.location.regions.iter().map(|p| {
                 let region_layer_val = match ctx.layers.get(ctx.active_layer) {
                     Some(LayerState::Loading) => "Loading".to_string(),
                     Some(LayerState::Failed(_)) => "".to_string(),

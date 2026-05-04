@@ -1,6 +1,6 @@
 use geo::Coord;
 use itertools::Itertools;
-use std::marker::PhantomData;
+use std::{collections::HashMap, marker::PhantomData};
 
 use ratatui::{
     style::{Color, Style},
@@ -18,6 +18,49 @@ use crate::{
     message::Message,
 };
 
+#[derive(Clone)]
+pub struct ColorMap {
+    stops: Vec<(f64, (u8, u8, u8))>,
+}
+
+impl ColorMap {
+    pub fn sample(&self, t: f64) -> Color {
+        let t = t.clamp(0.0, 1.0);
+        if t <= self.stops[0].0 {
+            let (_, c) = self.stops[0];
+            return Color::Rgb(c.0, c.1, c.2);
+        }
+        for w in self.stops.windows(2) {
+            let (t0, c0) = w[0];
+            let (t1, c1) = w[1];
+            if t <= t1 {
+                let f = (t - t0) / (t1 - t0);
+                let lerp = |a: u8, b: u8| (a as f64 + (b as f64 - a as f64) * f) as u8;
+                return Color::Rgb(lerp(c0.0, c1.0), lerp(c0.1, c1.1), lerp(c0.2, c1.2));
+            }
+        }
+        let (_, c) = *self.stops.last().unwrap();
+        Color::Rgb(c.0, c.1, c.2)
+    }
+
+    pub fn magma() -> Self {
+        Self {
+            stops: vec![
+                (0.00, (0, 0, 4)),
+                (0.13, (28, 16, 68)),
+                (0.25, (59, 15, 112)),
+                (0.38, (98, 25, 128)),
+                (0.50, (139, 41, 129)),
+                (0.63, (181, 54, 122)),
+                (0.75, (222, 73, 104)),
+                (0.88, (243, 129, 119)),
+                (0.94, (251, 176, 116)),
+                (1.00, (252, 253, 191)),
+            ],
+        }
+    }
+}
+
 pub struct MapView<P: Projection + 'static> {
     pub offset_x: f64,
     pub offset_y: f64,
@@ -27,12 +70,19 @@ pub struct MapView<P: Projection + 'static> {
     _proj: PhantomData<P>,
 }
 
+pub struct FillByValue {
+    pub map: ColorMap,
+    pub values: HashMap<String, f64>,
+}
+
 pub struct MapViewCtx<'a, P: Projection> {
     pub center: &'a Point<P>,
-    pub polygons: &'a [Polygon<P>],
+    pub boundaries: &'a [Polygon<P>],
+    pub regions: &'a [Polygon<P>],
     pub polylines: &'a [Polyline<P>],
     pub title: &'a str,
-    pub selected_polygon: &'a Option<usize>,
+    pub selected_region: &'a Option<usize>,
+    pub fill_info: Option<FillByValue>,
 }
 
 impl<P: Projection + 'static> MapView<P> {
@@ -53,9 +103,10 @@ impl<P: Projection + 'static> MapView<P> {
 
     /// Reset offsets to origin and set scale so the given polygons fit the viewport
     /// with a small margin. Polygons are assumed to be in this MapView's projection.
-    pub fn fit_polygons(&mut self, polygons: &[Polygon<P>]) {
-        let half_extent = polygons
+    pub fn fit_polygons(&mut self, boundaries: &[Polygon<P>], regions: &[Polygon<P>]) {
+        let half_extent = boundaries
             .iter()
+            .chain(regions.iter())
             .flat_map(|p| p.inner.exterior().coords())
             .fold(0.0_f64, |acc, c| acc.max(c.x.abs()).max(c.y.abs()));
 
@@ -108,20 +159,17 @@ impl<P: Projection + 'static> Component for MapView<P> {
         let x_bounds = [cx - half_x, cx + half_x];
         let y_bounds = [cy - half_y, cy + half_y];
 
+        let max_fill_value = match &ctx.fill_info {
+            Some(fill_info) => fill_info.values.values().copied().reduce(f64::max),
+            None => None,
+        };
         let canvas = Canvas::default()
             .block(Block::default().borders(Borders::ALL).title(ctx.title))
             .marker(Marker::Braille)
             .x_bounds(x_bounds)
             .y_bounds(y_bounds)
             .paint(|c| {
-                let mut selected_polys = vec![];
-                for (i, poly) in ctx.polygons.iter().enumerate() {
-                    let selected = ctx.selected_polygon == &Some(i);
-                    if selected {
-                        selected_polys.push(poly);
-                        continue;
-                    }
-                    let color = Color::Red;
+                for poly in ctx.boundaries {
                     for (a, b) in poly.inner.exterior().coords().tuple_windows() {
                         if let Some([x1, y1, x2, y2]) = clip_line(a, b, x_bounds, y_bounds) {
                             c.draw(&Line {
@@ -129,8 +177,41 @@ impl<P: Projection + 'static> Component for MapView<P> {
                                 y1,
                                 x2,
                                 y2,
-                                color,
+                                color: Color::Red,
                             });
+                        }
+                    }
+                }
+
+                let mut selected_polys = vec![];
+                for (i, poly) in ctx.regions.iter().enumerate() {
+                    let selected = ctx.selected_region == &Some(i);
+                    if selected {
+                        selected_polys.push(poly);
+                        continue;
+                    }
+                    let fill_color = ctx.fill_info.as_ref().and_then(|fi| {
+                        fi.values
+                            .get(&poly.metadata.id)
+                            .map(|v| fi.map.sample(v / max_fill_value.unwrap_or(1.0)))
+                    });
+                    match fill_color {
+                        Some(color) => {
+                            fill_polygon::<P>(c, poly, color, x_bounds, y_bounds, self.scale)
+                        }
+                        None => {
+                            for (a, b) in poly.inner.exterior().coords().tuple_windows() {
+                                if let Some([x1, y1, x2, y2]) = clip_line(a, b, x_bounds, y_bounds)
+                                {
+                                    c.draw(&Line {
+                                        x1,
+                                        y1,
+                                        x2,
+                                        y2,
+                                        color: Color::Red,
+                                    });
+                                }
+                            }
                         }
                     }
                 }

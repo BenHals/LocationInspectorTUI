@@ -58,7 +58,7 @@ impl App {
         let location_id = state.location.tag.id.clone();
         let region_ids: Vec<String> = state
             .location
-            .polygons
+            .regions
             .iter()
             .map(|p| p.metadata.id.clone())
             .collect();

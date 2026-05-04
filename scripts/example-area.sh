@@ -20,7 +20,7 @@ jq -c --argjson ids "$ids_json" '
     | . / 2
     | if . < 0 then -. else . end;
 
-  (map({key: .id, value: ((.ring | shoelace) / 1000000)}) | from_entries) as $all
+  (.regions | map({key: .id, value: ((.ring | shoelace) / 1000000)}) | from_entries) as $all
   | reduce $ids[] as $id ({};
       if $all | has($id) then .[$id] = $all[$id] else . end)
 ' "$POLY_FILE"

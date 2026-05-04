@@ -53,10 +53,12 @@ impl Component for SummaryScreen {
         }
         let map_ctx = MapViewCtx {
             center: &ctx.location.latlng,
-            polygons: &[],
+            boundaries: &[],
+            regions: &[],
             polylines: &[],
             title: &ctx.location.tag.name,
-            selected_polygon: &None,
+            selected_region: &None,
+            fill_info: None,
         };
         self.map.update(msg, map_ctx, db)
     }
@@ -69,10 +71,12 @@ impl Component for SummaryScreen {
 
         let map_ctx = MapViewCtx {
             center: &ctx.location.latlng,
-            polygons: &[],
+            boundaries: &[],
+            regions: &[],
             polylines: &[],
             title: "None",
-            selected_polygon: &None,
+            selected_region: &None,
+            fill_info: None,
         };
         self.map.render(frame, layout[1], map_ctx);
         let err_str = match &ctx.err {
