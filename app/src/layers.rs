@@ -1,13 +1,16 @@
 use std::{
     collections::HashMap,
     error::Error,
-    io::Write,
+    io::{Read, Write},
     path::PathBuf,
     process::{Command, Stdio},
     sync::mpsc,
+    time::{Duration, Instant},
 };
 
 use crate::{config::LayerConfig, update::Update};
+
+const POLL_INTERVAL: Duration = Duration::from_millis(50);
 
 pub fn spawn_layer_load(
     config: LayerConfig,
@@ -52,13 +55,47 @@ pub fn run_layer_command(
         let payload = serde_json::to_string(region_ids)?;
         stdin.write_all(payload.as_bytes())?;
     }
+    // Close stdin so the child sees EOF and can complete.
+    drop(child.stdin.take());
 
-    let output = child.wait_with_output()?;
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
+    // Poll for completion, killing the child if the timeout is exceeded.
+    // Note: this assumes layer scripts produce small output (well under the
+    // OS pipe buffer of ~64KB). Larger outputs would block the child on
+    // stdout writes since we don't drain until exit.
+    let timeout = Duration::from_secs(config.timeout_secs);
+    let start = Instant::now();
+    let status = loop {
+        match child.try_wait()? {
+            Some(s) => break s,
+            None => {
+                if start.elapsed() >= timeout {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    return Err(format!(
+                        "Layer command timed out after {}s",
+                        timeout.as_secs()
+                    )
+                    .into());
+                }
+                std::thread::sleep(POLL_INTERVAL);
+            }
+        }
+    };
+
+    let mut stdout = Vec::new();
+    if let Some(mut s) = child.stdout.take() {
+        s.read_to_end(&mut stdout)?;
+    }
+    let mut stderr = Vec::new();
+    if let Some(mut s) = child.stderr.take() {
+        s.read_to_end(&mut stderr)?;
+    }
+
+    if !status.success() {
+        let stderr = String::from_utf8_lossy(&stderr);
         return Err(format!("Layer command failed {}", stderr.trim()).into());
     }
 
-    let layer_data: HashMap<String, f64> = serde_json::from_slice(&output.stdout)?;
+    let layer_data: HashMap<String, f64> = serde_json::from_slice(&stdout)?;
     Ok(layer_data)
 }

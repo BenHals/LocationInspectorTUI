@@ -24,6 +24,12 @@ pub struct LayerConfig {
     pub id: String,
     pub name: String,
     pub command: String,
+    #[serde(default = "default_timeout_secs")]
+    pub timeout_secs: u64,
+}
+
+fn default_timeout_secs() -> u64 {
+    30
 }
 
 impl Default for Config {
