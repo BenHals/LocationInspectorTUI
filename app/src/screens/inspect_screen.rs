@@ -39,7 +39,7 @@ pub struct InspectScreen {
 impl InspectScreen {
     pub fn new() -> Self {
         Self {
-            map: MapView::new(&[], Some(0.1), false),
+            map: MapView::new(&[], Some(0.1), false, true),
             selected_region: None,
         }
     }
@@ -141,6 +141,7 @@ impl Component for InspectScreen {
             boundaries: &ctx.location.boundaries,
             regions: &ctx.location.regions,
             polylines: &[],
+            points: &[],
             title: &ctx.location.tag.name,
             selected_region: &self.selected_region,
             fill_info: None,
@@ -168,6 +169,7 @@ impl Component for InspectScreen {
             boundaries: &ctx.location.boundaries,
             regions: &ctx.location.regions,
             polylines: &[],
+            points: &[],
             title: &ctx.location.tag.name,
             selected_region: &self.selected_region,
             fill_info: layer_fills,

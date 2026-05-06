@@ -26,7 +26,7 @@ pub struct SummaryScreen {
 impl SummaryScreen {
     pub fn new() -> Self {
         Self {
-            map: MapView::new(coastlines(), Some(0.1), true),
+            map: MapView::new(coastlines(), Some(0.1), true, true),
         }
     }
 }
@@ -56,6 +56,7 @@ impl Component for SummaryScreen {
             boundaries: &[],
             regions: &[],
             polylines: &[],
+            points: &[],
             title: &ctx.location.tag.name,
             selected_region: &None,
             fill_info: None,
@@ -74,6 +75,7 @@ impl Component for SummaryScreen {
             boundaries: &[],
             regions: &[],
             polylines: &[],
+            points: &[],
             title: "None",
             selected_region: &None,
             fill_info: None,

@@ -3,7 +3,7 @@ use itertools::Itertools;
 use std::{collections::HashMap, marker::PhantomData};
 
 use ratatui::{
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     symbols::Marker,
     text::Span,
     widgets::{
@@ -17,6 +17,23 @@ use crate::{
     domain::geometry::{Point, Polygon, Polyline, Projection},
     message::Message,
 };
+
+/// Single-octant block characters from Unicode 16 "Block Octants" (U+1CD00 block).
+/// Indexed as `[col_half][row_quarter]` where col_half is 0 (left) or 1 (right)
+/// and row_quarter is 0..=3 from the top of the cell.
+///
+/// Bitmask layout assumed: bit i is set when sub-cell i is filled, with sub-cells
+/// numbered top→bottom, left→right (0=top-left, 1=top-right, 2=upper-mid-left ...
+/// 7=bottom-right). Codepoint = U+1CD00 + (mask - 1).
+///
+/// **Terminal support caveat**: octants are Unicode 16 (Sept 2024). Modern terminals
+/// (kitty, recent iTerm2, WezTerm, Ghostty) render them; older terminals or fonts
+/// without coverage will show tofu. If you see boxes, fall back to quadrants
+/// (▘▝▖▗ at U+2598/U+259D/U+2596/U+2597) for half the resolution but universal support.
+const OCTANT_GLYPHS: [[&str; 4]; 2] = [
+    ["\u{1CD00}", "\u{1CD03}", "\u{1CD0F}", "\u{1CD3F}"],
+    ["\u{1CD01}", "\u{1CD07}", "\u{1CD1F}", "\u{1CD7F}"],
+];
 
 #[derive(Clone)]
 pub struct ColorMap {
@@ -67,6 +84,7 @@ pub struct MapView<P: Projection + 'static> {
     pub scale: f64,
     pub background: &'static [Polyline<P>],
     pub show_location: bool,
+    pub center_on: bool,
     _proj: PhantomData<P>,
 }
 
@@ -80,6 +98,7 @@ pub struct MapViewCtx<'a, P: Projection> {
     pub boundaries: &'a [Polygon<P>],
     pub regions: &'a [Polygon<P>],
     pub polylines: &'a [Polyline<P>],
+    pub points: &'a [Point<P>],
     pub title: &'a str,
     pub selected_region: &'a Option<usize>,
     pub fill_info: Option<FillByValue>,
@@ -90,6 +109,7 @@ impl<P: Projection + 'static> MapView<P> {
         background: &'static [Polyline<P>],
         scale: Option<f64>,
         show_location: bool,
+        center_on: bool,
     ) -> Self {
         Self {
             offset_x: 0.0,
@@ -97,6 +117,7 @@ impl<P: Projection + 'static> MapView<P> {
             scale: scale.unwrap_or(1.0),
             background,
             show_location,
+            center_on,
             _proj: PhantomData,
         }
     }
@@ -152,8 +173,10 @@ impl<P: Projection + 'static> Component for MapView<P> {
         area: ratatui::prelude::Rect,
         ctx: Self::Ctx<'a>,
     ) {
-        let cx = ctx.center.x + self.offset_x;
-        let cy = ctx.center.y + self.offset_y;
+        let center_x = if self.center_on { ctx.center.x } else { 0.0 };
+        let center_y = if self.center_on { ctx.center.y } else { 0.0 };
+        let cx = center_x + self.offset_x;
+        let cy = center_y + self.offset_y;
         let half_x = (area.width as f64 / 2.0) * P::UNITS_PER_CELL_X * self.scale;
         let half_y = (area.height as f64 / 2.0) * P::UNITS_PER_CELL_Y * self.scale;
         let x_bounds = [cx - half_x, cx + half_x];
@@ -258,6 +281,25 @@ impl<P: Projection + 'static> Component for MapView<P> {
                     }
                 }
 
+                let cell_w = (x_bounds[1] - x_bounds[0]) / area.width as f64;
+                let cell_h = (y_bounds[1] - y_bounds[0]) / area.height as f64;
+                for pt in ctx.points {
+                    if let Some(glyph) =
+                        octant_glyph_for_point(pt.x, pt.y, x_bounds, y_bounds, cell_w, cell_h)
+                    {
+                        c.print(
+                            pt.x,
+                            pt.y,
+                            Span::styled(
+                                glyph,
+                                Style::new()
+                                    .fg(Color::Rgb(255, 255, 255))
+                                    .add_modifier(Modifier::BOLD),
+                            ),
+                        );
+                    }
+                }
+
                 if self.show_location {
                     c.print(
                         ctx.center.x,
@@ -269,6 +311,27 @@ impl<P: Projection + 'static> Component for MapView<P> {
 
         frame.render_widget(canvas, area);
     }
+}
+
+/// Pick the octant block character that visually anchors a continuous (px, py)
+/// point at its precise sub-cell position. Returns `None` if the point is
+/// outside the canvas bounds. Caller is responsible for styling.
+fn octant_glyph_for_point(
+    px: f64,
+    py: f64,
+    x_bounds: [f64; 2],
+    y_bounds: [f64; 2],
+    cell_w: f64,
+    cell_h: f64,
+) -> Option<&'static str> {
+    if px < x_bounds[0] || px > x_bounds[1] || py < y_bounds[0] || py > y_bounds[1] {
+        return None;
+    }
+    let frac_col = ((px - x_bounds[0]) / cell_w).rem_euclid(1.0);
+    let frac_row = ((y_bounds[1] - py) / cell_h).rem_euclid(1.0);
+    let col_half = if frac_col < 0.5 { 0 } else { 1 };
+    let row_quarter = ((frac_row * 4.0).floor() as usize).min(3);
+    Some(OCTANT_GLYPHS[col_half][row_quarter])
 }
 
 /// Clip a line segment from `a` to `b` to the rectangle `[x_bounds] × [y_bounds]`
