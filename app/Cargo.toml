@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+arboard = "3.6.1"
 crossterm = "0.27.0"
 fuzzy-matcher = "0.3.7"
 geo = { version = "0.28.0", features = ["use-proj"] }

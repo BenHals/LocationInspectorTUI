@@ -27,6 +27,13 @@ pub struct Point<P: Projection> {
     _proj: PhantomData<P>,
 }
 
+impl<P: Projection> Clone for Point<P> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl<P: Projection> Copy for Point<P> {}
+
 impl<P: Projection> Point<P> {
     pub const fn new(x: f64, y: f64) -> Self {
         Self {

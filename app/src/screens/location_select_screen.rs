@@ -7,12 +7,7 @@ use ratatui::{
 };
 
 use crate::{
-    component::Component,
-    db::{db_connection::DBConnection, file_db::FileDB},
-    domain::location::LocationTag,
-    message::Message,
-    model::Model,
-    update::Update,
+    coastlines::coastlines, component::Component, components::map_view::{MapView, MapViewCtx}, db::{db_connection::DBConnection, file_db::FileDB}, domain::{geometry::{Point, WGS84}, location::LocationTag}, message::Message, model::Model, update::Update
 };
 
 pub struct LocationSelectScreen {
@@ -21,6 +16,7 @@ pub struct LocationSelectScreen {
     query: Option<String>,
     matcher: SkimMatcherV2,
     matches: Vec<usize>,
+    pub map: MapView<WGS84>,
 }
 
 impl LocationSelectScreen {
@@ -33,6 +29,7 @@ impl LocationSelectScreen {
             query: None,
             matcher: SkimMatcherV2::default(),
             matches: (0..n_tags).collect(),
+            map: MapView::new(coastlines(), Some(1.0), true, false)
         }
     }
 
@@ -125,10 +122,10 @@ impl Component for LocationSelectScreen {
         (vec![], vec![])
     }
 
-    fn render(&self, frame: &mut Frame, area: Rect, _ctx: &Model) {
+    fn render(&self, frame: &mut Frame, area: Rect, ctx: &Model) {
         let layout = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Min(1), Constraint::Length(1)])
+            .constraints([Constraint::Min(1), Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
             .split(area);
 
         let items: Vec<ListItem> = self
@@ -136,7 +133,15 @@ impl Component for LocationSelectScreen {
             .iter()
             .map(|&i| {
                 let tag = &self.location_tags[i];
-                ListItem::new(format!("{} - {}", tag.id, tag.name))
+                ListItem::new(format!(
+                    "{} - {}  [{}/{}]  {} · {}",
+                    tag.id,
+                    tag.name,
+                    tag.country_code,
+                    tag.country_subdivision,
+                    tag.kind,
+                    tag.status,
+                ))
             })
             .collect();
         let list = List::new(items)
@@ -145,13 +150,27 @@ impl Component for LocationSelectScreen {
             .highlight_symbol("▶ ");
         let mut list_state = ListState::default();
         list_state.select(Some(self.idx));
-        frame.render_stateful_widget(list, layout[0], &mut list_state);
+        frame.render_stateful_widget(list, layout[1], &mut list_state);
 
         let p = match &self.query {
             Some(q) => Paragraph::new(format!("/ {}", q)),
             None => Paragraph::new("Press '/' to search"),
         };
-        frame.render_widget(p, layout[1]);
+        frame.render_widget(p, layout[0]);
+
+        let points: Vec<Point<WGS84>> = self.matches.iter().map(|&i| self.location_tags[i].coord).collect();
+
+        let map_ctx = MapViewCtx {
+            center: &self.location_tags[self.matches.get(self.idx).copied().unwrap_or(0)].coord,
+            boundaries: &[],
+            regions: &[],
+            polylines: &[],
+            points: &points,
+            title: "None",
+            selected_region: &None,
+            fill_info: None,
+        };
+        self.map.render(frame, layout[2], map_ctx);
     }
 }
 
@@ -166,7 +185,7 @@ fn recompute_matches(
             .enumerate()
             .filter_map(|(i, t)| {
                 matcher
-                    .fuzzy_match(tag_to_search_str(t), query_str)
+                    .fuzzy_match(&tag_to_search_str(t), query_str)
                     .map(|score| (i, score))
             })
             .collect();
@@ -177,6 +196,9 @@ fn recompute_matches(
     (0..tags.len()).collect()
 }
 
-fn tag_to_search_str(tag: &LocationTag) -> &str {
-    &tag.name
+fn tag_to_search_str(tag: &LocationTag) -> String {
+    format!(
+        "{} {} {} {} {} {}",
+        tag.id, tag.name, tag.country_code, tag.country_subdivision, tag.kind, tag.status,
+    )
 }
