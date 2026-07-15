@@ -1,6 +1,9 @@
 use geo::Coord;
 use itertools::Itertools;
-use std::{collections::HashMap, marker::PhantomData};
+use std::{
+    collections::{BTreeMap, HashMap},
+    marker::PhantomData,
+};
 
 use ratatui::{
     style::{Color, Modifier, Style},
@@ -223,8 +226,12 @@ impl<P: Projection + 'static> Component for MapView<P> {
             Some(fill_info) => fill_info.values.values().copied().reduce(f64::max),
             None => None,
         };
+        let block = Block::default().borders(Borders::ALL).title(ctx.title);
+        // The canvas paints inside the block's borders; point glyphs must be
+        // bucketed against this inner grid, not the full widget area.
+        let inner = block.inner(area);
         let canvas = Canvas::default()
-            .block(Block::default().borders(Borders::ALL).title(ctx.title))
+            .block(block)
             .marker(Marker::Braille)
             .x_bounds(x_bounds)
             .y_bounds(y_bounds)
@@ -318,24 +325,25 @@ impl<P: Projection + 'static> Component for MapView<P> {
                     }
                 }
 
-                let cell_w = (x_bounds[1] - x_bounds[0]) / area.width as f64;
-                let cell_h = (y_bounds[1] - y_bounds[0]) / area.height as f64;
-                // Accumulate octant bits per cell so multiple points in the same
-                // cell combine into a single composite glyph.
-                let mut cells: HashMap<(i64, i64), u8> = HashMap::new();
+                // Accumulate octant bits per terminal cell so multiple points in
+                // the same cell combine into a single composite glyph. Cells are
+                // keyed by ratatui's label transform so each glyph lands in
+                // exactly the cell it was bucketed into; BTreeMap keeps the
+                // print order stable across frames.
+                let mut cells: BTreeMap<(i64, i64), u8> = BTreeMap::new();
                 for pt in ctx.points {
                     if let Some((key, bit)) =
-                        octant_bit_for_point(pt.x, pt.y, x_bounds, y_bounds, cell_w, cell_h)
+                        octant_bit_for_point(pt.x, pt.y, x_bounds, y_bounds, inner.width, inner.height)
                     {
                         *cells.entry(key).or_insert(0) |= bit;
                     }
                 }
-                for ((cx, cy), mask) in &cells {
+                for (&(col, row), mask) in &cells {
                     if *mask == 0 {
                         continue;
                     }
-                    let world_x = x_bounds[0] + (*cx as f64 + 0.5) * cell_w;
-                    let world_y = y_bounds[1] - (*cy as f64 + 0.5) * cell_h;
+                    let (world_x, world_y) =
+                        cell_center_world(col, row, x_bounds, y_bounds, inner.width, inner.height);
                     let glyph = OCTANT_TABLE[*mask as usize];
                     c.print(
                         world_x,
@@ -363,29 +371,65 @@ impl<P: Projection + 'static> Component for MapView<P> {
 }
 
 /// Locate a continuous (px, py) point at its precise sub-cell position. Returns
-/// the cell index plus an octant bitmask with a single bit set for that point's
-/// sub-cell. Returns `None` if the point is outside the canvas bounds. Caller
-/// OR-combines bits from multiple points falling in the same cell, then looks
-/// up `OCTANT_TABLE[mask as usize]` for the composite glyph.
+/// the terminal cell index plus an octant bitmask with a single bit set for that
+/// point's sub-cell. Returns `None` if the point is outside the canvas bounds.
+/// Caller OR-combines bits from multiple points falling in the same cell, then
+/// looks up `OCTANT_TABLE[mask as usize]` for the composite glyph.
+///
+/// Mirrors ratatui's `Painter::get_point` at braille resolution (2x4 dots per
+/// cell), `dot = ((x - left) * (dots - 1) / span).round()`, so each point marks
+/// exactly the dot the painter would light for geometry drawn at the same
+/// world coordinate — keeping point glyphs aligned with lines and fills. The
+/// braille dot grid is the octant grid, so `dot % 2` / `dot % 4` give the
+/// sub-cell directly.
 fn octant_bit_for_point(
     px: f64,
     py: f64,
     x_bounds: [f64; 2],
     y_bounds: [f64; 2],
-    cell_w: f64,
-    cell_h: f64,
+    inner_w: u16,
+    inner_h: u16,
 ) -> Option<((i64, i64), u8)> {
     if px < x_bounds[0] || px > x_bounds[1] || py < y_bounds[0] || py > y_bounds[1] {
         return None;
     }
-    let cx = ((px - x_bounds[0]) / cell_w).floor() as i64;
-    let cy = ((y_bounds[1] - py) / cell_h).floor() as i64;
-    let frac_col = ((px - x_bounds[0]) / cell_w).rem_euclid(1.0);
-    let frac_row = ((y_bounds[1] - py) / cell_h).rem_euclid(1.0);
-    let col_half = if frac_col < 0.5 { 0 } else { 1 };
-    let row_quarter = ((frac_row * 4.0).floor() as usize).min(3);
-    let bit = (row_quarter * 2 + col_half) as u8;
-    Some(((cx, cy), 1u8 << bit))
+    let span_x = x_bounds[1] - x_bounds[0];
+    let span_y = y_bounds[1] - y_bounds[0];
+    if span_x <= 0.0 || span_y <= 0.0 || inner_w == 0 || inner_h == 0 {
+        return None;
+    }
+    let dots_x = f64::from(inner_w) * 2.0;
+    let dots_y = f64::from(inner_h) * 4.0;
+    let dot_x = ((px - x_bounds[0]) * (dots_x - 1.0) / span_x).round() as i64;
+    let dot_y = ((y_bounds[1] - py) * (dots_y - 1.0) / span_y).round() as i64;
+    let bit = ((dot_y % 4) * 2 + (dot_x % 2)) as u8;
+    Some(((dot_x / 2, dot_y / 4), 1u8 << bit))
+}
+
+/// Inverse of the cell indexing in [`octant_bit_for_point`]: a world coordinate
+/// that ratatui's label transform maps back to exactly cell `(col, row)`.
+/// Clamped to the bounds so the last row/column pass ratatui's label filter.
+fn cell_center_world(
+    col: i64,
+    row: i64,
+    x_bounds: [f64; 2],
+    y_bounds: [f64; 2],
+    inner_w: u16,
+    inner_h: u16,
+) -> (f64, f64) {
+    let world_x = if inner_w > 1 {
+        let cell_w = (x_bounds[1] - x_bounds[0]) / f64::from(inner_w - 1);
+        (x_bounds[0] + (col as f64 + 0.5) * cell_w).min(x_bounds[1])
+    } else {
+        x_bounds[0]
+    };
+    let world_y = if inner_h > 1 {
+        let cell_h = (y_bounds[1] - y_bounds[0]) / f64::from(inner_h - 1);
+        (y_bounds[1] - (row as f64 + 0.5) * cell_h).max(y_bounds[0])
+    } else {
+        y_bounds[1]
+    };
+    (world_x, world_y)
 }
 
 /// Clip a line segment from `a` to `b` to the rectangle `[x_bounds] × [y_bounds]`
